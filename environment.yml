@@ -1,0 +1,29 @@
+name: hj_reach
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  - python=3.11
+  - pip
+  - numpy>=1.22
+  - scipy  # for loading MATLAB .mat files (scipy.io.loadmat)
+  - matplotlib
+  - plotly
+  - tqdm
+  - jupyter
+  - ipykernel
+  - ffmpeg
+  - yaml
+  - pip:
+      # JAX with CUDA 12 support for NVIDIA GPUs.
+      # On a CPU-only machine, replace the line below with "jax>=0.4.25".
+      - jax[cuda12]>=0.5.0
+      - flax>=0.6.6
+      # Install this repository's hj_reachability in editable mode
+      # (relative to environment.yml, so run from the repository root).
+      - -e .
+variables:
+  # Disable JAX's default GPU memory preallocation (75% of VRAM) and
+  # allocate memory on demand instead, to avoid OOM issues when the GPU
+  # is shared with other workloads (e.g., display output).
+  XLA_PYTHON_CLIENT_PREALLOCATE: "false"

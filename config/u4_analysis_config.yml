@@ -1,0 +1,94 @@
+# Path to the MATLAB trim corridor results (relative to the repository root)
+mat_path: hj_reachability/systems/Trim_Corridor_Results.mat
+
+hj_analysis_config:
+  time: -1
+  dt: 0.01
+  mode: # brs frs brt frt
+
+dynamics:
+  input_min_Pi: 0.0
+  input_min_tilt: -10.0
+  input_min_delta_a: -30.0
+  input_min_delta_e: -20.0
+  input_min_delta_r: -20.0
+
+  input_max_Pi: 100.0
+  input_max_tilt: 100.0
+  input_max_delta_a: 30.0
+  input_max_delta_e: 20.0
+  input_max_delta_r: 20.0
+
+longitudinal:
+  # Target set settings
+  target_min_u:
+  target_min_w:
+  target_min_q:
+  target_min_theta:
+
+  target_max_u:
+  target_max_w:
+  target_max_q:
+  target_max_theta:
+
+  # Grid settings
+  grid_min_u: # (m/s)
+  grid_min_w: # (m/s)
+  grid_min_q: # (rad/s)
+  grid_min_theta: # (rad)
+
+  grid_max_u: # (m/s)
+  grid_max_w: # (m/s)
+  grid_max_q: # (rad/s)
+  grid_max_theta:  # (rad)
+
+  grid_number_u: 
+  grid_number_w: 
+  grid_number_q: 
+  grid_number_theta: 
+
+  # Dynamics settings
+  input_min_Pi:       # (%)
+  input_min_delta_e:      # (deg)
+  input_min_tilt: -5.0  # (deg)
+
+  input_max_Pi:       # (%)
+  input_max_delta_e:      # (deg)
+  input_max_tilt: 5.0   # (deg)
+
+lateral:
+  # Target set settings
+  target_min_v: # (m/s)
+  target_min_p: # (rad/s)
+  target_min_r: # (rad/s)
+  target_min_phi: # (rad)
+
+  target_max_v: # (m/s)
+  target_max_p: # (rad/s)
+  target_max_r: # (rad/s)
+  target_max_phi: # (rad)
+
+  # Grid settings
+  grid_min_v: # (m/s)
+  grid_min_p: # (rad/s)
+  grid_min_r: # (rad/s)
+  grid_min_phi: # (rad)
+
+  grid_max_v: # (m/s)
+  grid_max_p: # (rad/s)
+  grid_max_r: # (rad/s)
+  grid_max_phi: # (rad)
+
+  grid_number_v: 
+  grid_number_p: 
+  grid_number_r: 
+  grid_number_phi: 
+
+  # Dynamics settings
+  input_min_delta_a: # (deg)
+  input_min_delta_r: # (deg)
+  input_min_delta_tilt: -5.0 # (deg)
+
+  input_max_delta_a: # (deg)
+  input_max_delta_r: # (deg)
+  input_max_delta_tilt: 5.0 # (deg)
