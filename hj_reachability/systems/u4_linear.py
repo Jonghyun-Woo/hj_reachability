@@ -11,7 +11,7 @@ The dynamics are expressed in deviation coordinates about the selected trim
 point, i.e. the grid state is `dx = x - x_trim` and the control is
 `du = u - u_trim`, so that
 
-    d(dx)/dt = A @ dx + B @ du + G_d @ d
+    d(dx)/dt = A @ dx + B @ du + d
 """
 
 import jax.numpy as jnp
@@ -22,6 +22,33 @@ from hj_reachability import dynamics
 from hj_reachability import sets
 
 TRIM_KEYS = ("A_LAT_all", "A_LON_all", "B_LAT_all", "B_LON_all", "U_TRIM", "X_TRIM")
+
+# X_TRIM order: [u v w p q r phi theta psi x y z]
+# U_TRIM order: [Pi (%), delta_a (deg), delta_e (deg), delta_r (deg), tilt (deg), ...]
+AXIS_SPEC = {
+    "lon": {
+        # States: [u (m/s), w (m/s), q (rad/s), theta (rad)]
+        # Inputs: [Pi (%), delta_e (deg), tilt (deg)]
+        "A_key": "A_LON_all",
+        "B_key": "B_LON_all",
+        "state_idx": (0, 2, 4, 7),
+        "input_idx": (0, 2, 4),
+        "input_names": ("Pi", "delta_e", "tilt"),
+        "cfg_key": "longitudinal",
+        "state_names": ("u", "w", "q", "theta"),
+    },
+    "lat": {
+        # States: [v (m/s), p (rad/s), r (rad/s), phi (rad)]
+        # Inputs: [delta_a (deg), delta_r (deg), tilt (deg)]
+        "A_key": "A_LAT_all",
+        "B_key": "B_LAT_all",
+        "state_idx": (1, 3, 5, 6),
+        "input_idx": (1, 3, 4),
+        "input_names": ("delta_a", "delta_r", "tilt"),
+        "cfg_key": "lateral",
+        "state_names": ("v", "p", "r", "phi"),
+    },
+}
 
 
 def load_trim_corridor(mat_path):
@@ -41,13 +68,19 @@ def load_trim_corridor(mat_path):
 
 
 class U4Linear(dynamics.ControlAndDisturbanceAffineDynamics):
-    """Linear dynamics `d(dx)/dt = A @ dx + B @ du` about one trim point.
+    """Linear dynamics `d(dx)/dt = A @ dx + B @ du + d` about one trim point.
 
     Attributes:
-        A: State matrix at the selected trim point.
-        B: Input matrix at the selected trim point.
-        x_trim: Trim state (full state, as stored in X_TRIM).
-        u_trim: Trim input (full input, as stored in U_TRIM).
+        A: State matrix at the selected trim point (4x4).
+        B: Input matrix at the selected trim point (4x3).
+        x_trim: Trim state for the selected axis (lon: [u, w, q, theta],
+            lat: [v, p, r, phi]).
+        u_trim: Trim input for the selected axis (lon: [Pi, delta_e, tilt],
+            lat: [delta_a, delta_r, tilt]).
+        ctrl_lb, ctrl_ub: Control bounds in deviation coordinates, i.e. the
+            allowed perturbation about the trim input clipped to the physical
+            actuator limits (same construction as `U4_Config.init_input_bounds`
+            in helperOC).
     """
 
     def __init__(self,
@@ -60,73 +93,65 @@ class U4Linear(dynamics.ControlAndDisturbanceAffineDynamics):
                  disturbance_space=None):
         """
         Args:
-            cfg: Configuration object/dict; expected to provide the .mat file
-                path (`cfg["mat_path"]`) and actuator limits (see
-                `control_bound`). TODO: adjust to the actual cfg structure.
-            trim_idx: Trim point index, 1..19 (MATLAB 1-based).
+            cfg: Configuration dict loaded from `config/u4_analysis_config.yml`;
+                provides the .mat file path (`cfg["mat_path"]`), the physical
+                actuator limits (`cfg["dynamics"]`) and the per-axis
+                perturbation limits and disturbance magnitude
+                (`cfg["longitudinal"]` / `cfg["lateral"]`).
+            trim_idx: Trim point index, 1..19 (MATLAB 1-based); the tilt angle
+                is `(trim_idx - 1) * 5` degrees.
             axis: "lon" for (A_LON, B_LON) or "lat" for (A_LAT, B_LAT).
         """
+        if axis not in AXIS_SPEC:
+            raise ValueError(f"axis must be 'lon' or 'lat', got {axis!r}")
+        spec = AXIS_SPEC[axis]
+
         data = load_trim_corridor(cfg["mat_path"])
         if not 1 <= trim_idx <= len(data["X_TRIM"]):
             raise ValueError(f"trim_idx must be in [1, {len(data['X_TRIM'])}], got {trim_idx}")
         i = trim_idx - 1
 
-        if axis == "lon":
-            A, B = data["A_LON_all"][i], data["B_LON_all"][i]
-        elif axis == "lat":
-            A, B = data["A_LAT_all"][i], data["B_LAT_all"][i]
-        else:
-            raise ValueError(f"axis must be 'lon' or 'lat', got {axis!r}")
-
-        self.A = jnp.asarray(A, dtype=jnp.float32)
-        self.B = jnp.asarray(B, dtype=jnp.float32)
-        self.x_trim = jnp.asarray(data["X_TRIM"][i], dtype=jnp.float32).squeeze()
-        self.u_trim = jnp.asarray(data["U_TRIM"][i], dtype=jnp.float32).squeeze()
+        self.A = jnp.asarray(data[spec["A_key"]][i], dtype=jnp.float32)
+        self.B = jnp.asarray(data[spec["B_key"]][i], dtype=jnp.float32)
+        self.x_trim = jnp.asarray(data["X_TRIM"][i].squeeze()[list(spec["state_idx"])], dtype=jnp.float32)
+        self.u_trim = jnp.asarray(data["U_TRIM"][i].squeeze()[list(spec["input_idx"])], dtype=jnp.float32)
         self.trim_idx = trim_idx
+        self.tilt_deg = (trim_idx - 1) * 5
         self.axis = axis
-
-        n_states, n_controls = self.B.shape
 
         self.ctrl_lb, self.ctrl_ub = self.control_bound(cfg)
         if control_space is None:
             control_space = sets.Box(self.ctrl_lb, self.ctrl_ub)
         if disturbance_space is None:
-            # TODO: model disturbance (e.g. wind) if needed; a zero-radius ball
-            # means no disturbance.
-            disturbance_space = sets.Ball(jnp.zeros(n_states), 0.)
+            # Additive per-state disturbance |d_i| <= dist_max, matching
+            # `optDstb` in helperOC; dist_max = 0 means no disturbance.
+            dist_max = jnp.broadcast_to(jnp.asarray(cfg[spec["cfg_key"]]["dist_max"], dtype=jnp.float32),
+                                        (self.A.shape[0],))
+            disturbance_space = sets.Box(-dist_max, dist_max)
         super().__init__(control_mode, disturbance_mode, control_space, disturbance_space)
 
     def control_bound(self, cfg):
-        n_controls = self.B.shape[1]
-        dyn_lb = jnp.array([cfg['dynamics']['input_min_Pi'],
-                            cfg['dynamics']['input_min_delta_e'],
-                            cfg['dynamics']['input_min_tilt']])
-        
-        dyn_ub = jnp.array([cfg['dynamics']['input_max_Pi'],
-                            cfg['dynamics']['input_max_delta_e'],
-                            cfg['dynamics']['input_max_tilt']])
-        if self.axis == "lon":
-            
-            temp_lb = jnp.array([cfg['longitudinal']['input_min_Pi'],
-                                 cfg['longitudinal']['input_min_delta_e'],
-                                 cfg['longitudinal']['input_min_tilt']])
-            
-            temp_ub = jnp.array([cfg['longitudinal']['input_max_Pi'],
-                                 cfg['longitudinal']['input_max_delta_e'],
-                                 cfg['longitudinal']['input_max_tilt']])
-            return 
-            
-        elif self.axis == "lat":
-            temp_lb = jnp.array([cfg['lateral']['input_min_delta_a'],
-                                 cfg['lateral']['input_min_delta_r'],
-                                 cfg['lateral']['input_min_delta_tilt']])
-            temp_ub = jnp.array([cfg['lateral']['input_max_delta_a'],
-                                 cfg['lateral']['input_max_delta_r'],
-                                 cfg['lateral']['input_max_delta_tilt']])
-            return
-        
-        else:
-            ReferenceError(f"The \'axis\' should be selected as \'lon\' or \'lat\' ")
+        """Control bounds in deviation coordinates about the trim input.
+
+        Following `U4_Config.init_input_bounds` in helperOC:
+            lb = max(physical_lb, u_trim - Delta) - u_trim
+            ub = min(physical_ub, u_trim + Delta) - u_trim
+        where the physical limits come from `cfg["dynamics"]` and the
+        perturbation limits (+-Delta) from the per-axis config section.
+        """
+        spec = AXIS_SPEC[self.axis]
+        phys = cfg["dynamics"]
+        axis_cfg = cfg[spec["cfg_key"]]
+        names = spec["input_names"]
+
+        phys_lb = jnp.array([phys[f"input_min_{name}"] for name in names], dtype=jnp.float32)
+        phys_ub = jnp.array([phys[f"input_max_{name}"] for name in names], dtype=jnp.float32)
+        delta_lb = jnp.array([axis_cfg[f"input_min_{name}"] for name in names], dtype=jnp.float32)
+        delta_ub = jnp.array([axis_cfg[f"input_max_{name}"] for name in names], dtype=jnp.float32)
+
+        ctrl_lb = jnp.maximum(phys_lb, self.u_trim + delta_lb) - self.u_trim
+        ctrl_ub = jnp.minimum(phys_ub, self.u_trim + delta_ub) - self.u_trim
+        return ctrl_lb, ctrl_ub
 
     def open_loop_dynamics(self, state, time):
         return self.A @ state
@@ -135,6 +160,6 @@ class U4Linear(dynamics.ControlAndDisturbanceAffineDynamics):
         return self.B
 
     def disturbance_jacobian(self, state, time):
-        # TODO: replace with the actual disturbance input matrix; identity means
-        # the disturbance enters each state equation directly.
+        # The disturbance enters each state equation directly (dx/dt += d),
+        # matching `dynamics.m` in helperOC.
         return jnp.eye(self.A.shape[0])

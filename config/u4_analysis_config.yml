@@ -2,16 +2,20 @@
 mat_path: hj_reachability/systems/Trim_Corridor_Results.mat
 
 hj_analysis_config:
-  time: -1
-  dt: 0.01
-  mode: # brs frs brt frt
+  axis: lon        # lon or lat
+  mode: brt        # brs / frs / brt / frt
+  accuracy: high   # low / medium / high / very_high
+  time: 1.0        # horizon (s); integration direction follows the mode
+  trim_idx_start: 1   # trim_idx 1..19 <-> tilt angle 0:5:90 (deg)
+  trim_idx_end: 19
 
+# Physical (absolute) actuator limits
 dynamics:
-  input_min_Pi: 0.0
-  input_min_tilt: -10.0
-  input_min_delta_a: -30.0
-  input_min_delta_e: -20.0
-  input_min_delta_r: -20.0
+  input_min_Pi: 0.0       # (%)
+  input_min_tilt: -10.0   # (deg)
+  input_min_delta_a: -30.0 # (deg)
+  input_min_delta_e: -20.0 # (deg)
+  input_min_delta_r: -20.0 # (deg)
 
   input_max_Pi: 100.0
   input_max_tilt: 100.0
@@ -20,75 +24,83 @@ dynamics:
   input_max_delta_r: 20.0
 
 longitudinal:
+  # States: [u (m/s), w (m/s), q (rad/s), theta (rad)], deviation from trim
   # Target set settings
-  target_min_u:
-  target_min_w:
-  target_min_q:
-  target_min_theta:
+  target_min_u: -1.0
+  target_min_w: -0.5
+  target_min_q: -0.05
+  target_min_theta: -0.05
 
-  target_max_u:
-  target_max_w:
-  target_max_q:
-  target_max_theta:
+  target_max_u: 1.0
+  target_max_w: 0.5
+  target_max_q: 0.05
+  target_max_theta: 0.05
 
   # Grid settings
-  grid_min_u: # (m/s)
-  grid_min_w: # (m/s)
-  grid_min_q: # (rad/s)
-  grid_min_theta: # (rad)
+  grid_min_u: -5.0      # (m/s)
+  grid_min_w: -10.0     # (m/s)
+  grid_min_q: -1.5      # (rad/s)
+  grid_min_theta: -0.75 # (rad)
 
-  grid_max_u: # (m/s)
-  grid_max_w: # (m/s)
-  grid_max_q: # (rad/s)
-  grid_max_theta:  # (rad)
+  grid_max_u: 5.0       # (m/s)
+  grid_max_w: 10.0      # (m/s)
+  grid_max_q: 1.5       # (rad/s)
+  grid_max_theta: 0.75  # (rad)
 
-  grid_number_u: 
-  grid_number_w: 
-  grid_number_q: 
-  grid_number_theta: 
+  grid_number_u: 41
+  grid_number_w: 81
+  grid_number_q: 61
+  grid_number_theta: 31
 
-  # Dynamics settings
-  input_min_Pi:       # (%)
-  input_min_delta_e:      # (deg)
-  input_min_tilt: -5.0  # (deg)
+  # Input perturbation limits about trim (+-Delta)
+  input_min_Pi: -15.0      # (%)
+  input_min_delta_e: -15.0 # (deg)
+  input_min_tilt: -5.0     # (deg)
 
-  input_max_Pi:       # (%)
-  input_max_delta_e:      # (deg)
-  input_max_tilt: 5.0   # (deg)
+  input_max_Pi: 15.0       # (%)
+  input_max_delta_e: 15.0  # (deg)
+  input_max_tilt: 5.0      # (deg)
+
+  # Additive per-state disturbance magnitude
+  dist_max: 0.0
 
 lateral:
+  # States: [v (m/s), p (rad/s), r (rad/s), phi (rad)], deviation from trim
   # Target set settings
-  target_min_v: # (m/s)
-  target_min_p: # (rad/s)
-  target_min_r: # (rad/s)
-  target_min_phi: # (rad)
+  target_min_v: -1.0    # (m/s)
+  target_min_p: -0.05   # (rad/s)
+  target_min_r: -0.05   # (rad/s)
+  target_min_phi: -0.05 # (rad)
 
-  target_max_v: # (m/s)
-  target_max_p: # (rad/s)
-  target_max_r: # (rad/s)
-  target_max_phi: # (rad)
+  target_max_v: 1.0     # (m/s)
+  target_max_p: 0.05    # (rad/s)
+  target_max_r: 0.05    # (rad/s)
+  target_max_phi: 0.05  # (rad)
 
   # Grid settings
-  grid_min_v: # (m/s)
-  grid_min_p: # (rad/s)
-  grid_min_r: # (rad/s)
-  grid_min_phi: # (rad)
+  grid_min_v: -4.0      # (m/s)
+  grid_min_p: -3.0      # (rad/s)
+  grid_min_r: -0.35     # (rad/s)
+  grid_min_phi: -0.55   # (rad)
 
-  grid_max_v: # (m/s)
-  grid_max_p: # (rad/s)
-  grid_max_r: # (rad/s)
-  grid_max_phi: # (rad)
+  grid_max_v: 4.0       # (m/s)
+  grid_max_p: 3.0       # (rad/s)
+  grid_max_r: 0.35      # (rad/s)
+  grid_max_phi: 0.55    # (rad)
 
-  grid_number_v: 
-  grid_number_p: 
-  grid_number_r: 
-  grid_number_phi: 
+  grid_number_v: 21
+  grid_number_p: 101
+  grid_number_r: 21
+  grid_number_phi: 21
 
-  # Dynamics settings
-  input_min_delta_a: # (deg)
-  input_min_delta_r: # (deg)
-  input_min_delta_tilt: -5.0 # (deg)
+  # Input perturbation limits about trim (+-Delta)
+  input_min_delta_a: -20.0 # (deg)
+  input_min_delta_r: -15.0 # (deg)
+  input_min_tilt: -5.0     # (deg)
 
-  input_max_delta_a: # (deg)
-  input_max_delta_r: # (deg)
-  input_max_delta_tilt: 5.0 # (deg)
+  input_max_delta_a: 20.0  # (deg)
+  input_max_delta_r: 15.0  # (deg)
+  input_max_tilt: 5.0      # (deg)
+
+  # Additive per-state disturbance magnitude
+  dist_max: 0.0
