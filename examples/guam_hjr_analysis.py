@@ -1,8 +1,8 @@
-"""U4 HJ reachability analysis over the trim corridor (port of helperOC's U4_HJIR.m).
+"""GUAM HJ reachability analysis over the trim table (port of helperOC's GUAM_HJIR.m).
 
-For each trim point (tilt angle 0:5:90 deg) this computes the reachable
-set/tube of the linearized lon/lat dynamics in deviation coordinates and
-saves the final value function to `examples/u4_outputs/`.
+For each horizontal-speed trim point (uh_idx, at a fixed wh_idx) this computes
+the reachable set/tube of the linearized lon/lat dynamics in deviation
+coordinates and saves the final value function to `examples/guam_outputs/`.
 """
 
 import os
@@ -18,13 +18,13 @@ from pathlib import Path
 import yaml
 
 import hj_reachability as hj
-from hj_reachability.systems.u4_linear import AXIS_SPEC
+from hj_reachability.systems.guam_linear import AXIS_SPEC
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-OUTPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "u4_outputs")
+OUTPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "guam_outputs")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-config_path = REPO_ROOT / "config" / "u4_analysis_config.yml"
+config_path = REPO_ROOT / "config" / "guam_analysis_config.yml"
 with open(config_path) as config_file:
     cfg = yaml.safe_load(config_file)
 cfg["mat_path"] = str(REPO_ROOT / cfg["mat_path"])
@@ -71,34 +71,32 @@ time = 0.
 target_time = time_sign * hj_cfg["time"]
 
 # 2D projection for visualization (remaining dims sliced at the grid center),
-# matching the plotDims used in U4_HJIR.m.
+# matching the plotDims used in GUAM_HJIR.m: lon -> (u, w), lat -> (r, phi).
 plot_dims = (0, 1) if axis == "lon" else (2, 3)
 
-for trim_idx in range(hj_cfg["trim_idx_start"], hj_cfg["trim_idx_end"] + 1):
-    u4_dynamics = hj.systems.U4Linear(cfg, trim_idx, axis, control_mode, disturbance_mode)
+wh_idx = hj_cfg["wh_idx"]
+for uh_idx in range(hj_cfg["uh_idx_start"], hj_cfg["uh_idx_end"] + 1):
+    guam_dynamics = hj.systems.GuamLinear(cfg, uh_idx, wh_idx, axis, control_mode, disturbance_mode)
 
-    target_values = hj.step(solver_settings, u4_dynamics, grid, time, values, target_time)
+    target_values = hj.step(solver_settings, guam_dynamics, grid, time, values, target_time)
 
-    tilt_deg = u4_dynamics.tilt_deg
-    stem = f"U4_{axis.upper()}_{mode.upper()}_TILT{tilt_deg}"
+    stem = f"GUAM_{axis.upper()}_{mode.upper()}_UH{uh_idx}_WH{wh_idx}"
     np.save(os.path.join(OUTPUT_DIR, f"{stem}.npy"), np.asarray(target_values))
-    print(f"Reachability analysis for U4_{axis.upper()} (tilt {tilt_deg} deg) completed.")
+    print(f"Reachability analysis for GUAM_{axis.upper()} "
+          f"(UH {guam_dynamics.uh:.1f} ft/s, WH {guam_dynamics.wh:.1f} ft/s) completed.")
     print(f"Results saved to {os.path.join(OUTPUT_DIR, stem + '.npy')}")
 
     slicer = tuple(slice(None) if dim in plot_dims else n // 2 for dim, n in enumerate(grid_shape))
     x_dim, y_dim = plot_dims
     plt.figure(figsize=(8, 6))
-    # plt.contourf(grid.coordinate_vectors[x_dim], grid.coordinate_vectors[y_dim],
-    #                 np.asarray(target_values[slicer]).T)
-    # plt.imshow(np.asarray(target_values[slicer]).T, extent=[grid_lo[0], grid_hi[0], grid_lo[1], grid_hi[1],],
-    #            origin='lower', aspect='auto', cmap='viridis')
     plt.pcolormesh(grid.coordinate_vectors[x_dim], grid.coordinate_vectors[y_dim],
-                    np.asarray(target_values[slicer]).T, cmap='viridis', shading='gouraud', vmin=np.asarray(target_values[slicer]).T.min(), vmax=0)
+                   np.asarray(target_values[slicer]).T, cmap='viridis', shading='gouraud',
+                   vmin=np.asarray(target_values[slicer]).T.min(), vmax=0)
     plt.colorbar()
     plt.contour(grid.coordinate_vectors[x_dim], grid.coordinate_vectors[y_dim],
                 np.asarray(target_values[slicer]).T, levels=0, colors="black", linewidths=2)
     plt.xlabel(state_names[x_dim])
     plt.ylabel(state_names[y_dim])
-    plt.title(f"U4 {axis.upper()} {mode.upper()}, tilt {tilt_deg} deg")
+    plt.title(f"GUAM {axis.upper()} {mode.upper()}, UH {guam_dynamics.uh:.1f} ft/s, WH {guam_dynamics.wh:.1f} ft/s")
     plt.savefig(os.path.join(OUTPUT_DIR, f"{stem}.png"), dpi=150)
     plt.close()

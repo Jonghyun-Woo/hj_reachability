@@ -5,7 +5,7 @@ hj_analysis_config:
   axis: lon        # lon or lat
   mode: brt        # brs / frs / brt / frt
   accuracy: high   # low / medium / high / very_high
-  time: 1.0        # horizon (s); integration direction follows the mode
+  time: 0.5        # horizon (s); integration direction follows the mode
   trim_idx_start: 1   # trim_idx 1..19 <-> tilt angle 0:5:90 (deg)
   trim_idx_end: 19
 
@@ -38,12 +38,12 @@ longitudinal:
 
   # Grid settings
   grid_min_u: -5.0      # (m/s)
-  grid_min_w: -10.0     # (m/s)
+  grid_min_w: -35.0     # (m/s)
   grid_min_q: -1.5      # (rad/s)
   grid_min_theta: -0.75 # (rad)
 
   grid_max_u: 5.0       # (m/s)
-  grid_max_w: 10.0      # (m/s)
+  grid_max_w: 35.0      # (m/s)
   grid_max_q: 1.5       # (rad/s)
   grid_max_theta: 0.75  # (rad)
 
@@ -53,12 +53,12 @@ longitudinal:
   grid_number_theta: 31
 
   # Input perturbation limits about trim (+-Delta)
-  input_min_Pi: -15.0      # (%)
-  input_min_delta_e: -15.0 # (deg)
+  input_min_Pi: -10.0      # (%)
+  input_min_delta_e: -5.0 # (deg)
   input_min_tilt: -5.0     # (deg)
 
-  input_max_Pi: 15.0       # (%)
-  input_max_delta_e: 15.0  # (deg)
+  input_max_Pi: 10.0       # (%)
+  input_max_delta_e: 5.0  # (deg)
   input_max_tilt: 5.0      # (deg)
 
   # Additive per-state disturbance magnitude
@@ -78,28 +78,28 @@ lateral:
   target_max_phi: 0.05  # (rad)
 
   # Grid settings
-  grid_min_v: -4.0      # (m/s)
-  grid_min_p: -3.0      # (rad/s)
-  grid_min_r: -0.35     # (rad/s)
-  grid_min_phi: -0.55   # (rad)
+  grid_min_v: -8.0      # (m/s)
+  grid_min_p: -1.5      # (rad/s)
+  grid_min_r: -1.5     # (rad/s)
+  grid_min_phi: -1.5   # (rad)
 
-  grid_max_v: 4.0       # (m/s)
-  grid_max_p: 3.0       # (rad/s)
-  grid_max_r: 0.35      # (rad/s)
-  grid_max_phi: 0.55    # (rad)
+  grid_max_v: 8.0       # (m/s)
+  grid_max_p: 1.5       # (rad/s)
+  grid_max_r: 1.5      # (rad/s)
+  grid_max_phi: 1.5    # (rad)
 
-  grid_number_v: 21
-  grid_number_p: 101
-  grid_number_r: 21
-  grid_number_phi: 21
+  grid_number_v: 61
+  grid_number_p: 61
+  grid_number_r: 61
+  grid_number_phi: 61
 
   # Input perturbation limits about trim (+-Delta)
-  input_min_delta_a: -20.0 # (deg)
-  input_min_delta_r: -15.0 # (deg)
+  input_min_delta_a: -5.0 # (deg)
+  input_min_delta_r: -5.0 # (deg)
   input_min_tilt: -5.0     # (deg)
 
-  input_max_delta_a: 20.0  # (deg)
-  input_max_delta_r: 15.0  # (deg)
+  input_max_delta_a: 5.0  # (deg)
+  input_max_delta_r: 5.0  # (deg)
   input_max_tilt: 5.0      # (deg)
 
   # Additive per-state disturbance magnitude

@@ -1,7 +1,10 @@
 .claude
+.vscode
+*.github
 CLAUDE.local.md
 examples/outputs/
 examples/u4_outputs/
+examples/guam_outputs/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
