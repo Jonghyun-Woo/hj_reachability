@@ -1,11 +1,12 @@
 # Path to the MATLAB trim corridor results (relative to the repository root)
-mat_path: hj_reachability/systems/Trim_Corridor_Results.mat
+# mat_path: hj_reachability/systems/Trim_Corridor_Results.mat
+mat_path: hj_reachability/systems/U4_TrimLinear_mcode.mat
 
 hj_analysis_config:
   axis: lon        # lon or lat
   mode: brt        # brs / frs / brt / frt
-  accuracy: high   # low / medium / high / very_high
-  time: 0.5        # horizon (s); integration direction follows the mode
+  accuracy: very_high   # low / medium / high / very_high
+  time: 1        # horizon (s); integration direction follows the mode / lat: 0.05s / lon: 0.5s
   trim_idx_start: 1   # trim_idx 1..19 <-> tilt angle 0:5:90 (deg)
   trim_idx_end: 19
 
@@ -28,28 +29,28 @@ longitudinal:
   # Target set settings
   target_min_u: -1.0
   target_min_w: -0.5
-  target_min_q: -0.05
-  target_min_theta: -0.05
+  target_min_q: -0.03
+  target_min_theta: -0.03
 
   target_max_u: 1.0
   target_max_w: 0.5
-  target_max_q: 0.05
-  target_max_theta: 0.05
+  target_max_q: 0.03
+  target_max_theta: 0.03
 
   # Grid settings
   grid_min_u: -5.0      # (m/s)
   grid_min_w: -35.0     # (m/s)
-  grid_min_q: -1.5      # (rad/s)
+  grid_min_q: -3.0      # (rad/s)
   grid_min_theta: -0.75 # (rad)
 
   grid_max_u: 5.0       # (m/s)
   grid_max_w: 35.0      # (m/s)
-  grid_max_q: 1.5       # (rad/s)
+  grid_max_q: 3.0       # (rad/s)
   grid_max_theta: 0.75  # (rad)
 
   grid_number_u: 41
   grid_number_w: 81
-  grid_number_q: 61
+  grid_number_q: 91
   grid_number_theta: 31
 
   # Input perturbation limits about trim (+-Delta)
@@ -68,14 +69,14 @@ lateral:
   # States: [v (m/s), p (rad/s), r (rad/s), phi (rad)], deviation from trim
   # Target set settings
   target_min_v: -1.0    # (m/s)
-  target_min_p: -0.05   # (rad/s)
-  target_min_r: -0.05   # (rad/s)
-  target_min_phi: -0.05 # (rad)
+  target_min_p: -0.03   # (rad/s)
+  target_min_r: -0.03   # (rad/s)
+  target_min_phi: -0.03 # (rad)
 
   target_max_v: 1.0     # (m/s)
-  target_max_p: 0.05    # (rad/s)
-  target_max_r: 0.05    # (rad/s)
-  target_max_phi: 0.05  # (rad)
+  target_max_p: 0.03    # (rad/s)
+  target_max_r: 0.03    # (rad/s)
+  target_max_phi: 0.03  # (rad)
 
   # Grid settings
   grid_min_v: -8.0      # (m/s)
@@ -89,8 +90,8 @@ lateral:
   grid_max_phi: 1.5    # (rad)
 
   grid_number_v: 61
-  grid_number_p: 61
-  grid_number_r: 61
+  grid_number_p: 81
+  grid_number_r: 81
   grid_number_phi: 61
 
   # Input perturbation limits about trim (+-Delta)

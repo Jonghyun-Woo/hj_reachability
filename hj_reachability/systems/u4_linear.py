@@ -111,12 +111,12 @@ class U4Linear(dynamics.ControlAndDisturbanceAffineDynamics):
             raise ValueError(f"trim_idx must be in [1, {len(data['X_TRIM'])}], got {trim_idx}")
         i = trim_idx - 1
 
-        self.A = jnp.asarray(data[spec["A_key"]][i], dtype=jnp.float32)
-        self.B = jnp.asarray(data[spec["B_key"]][i], dtype=jnp.float32)
-        self.x_trim = jnp.asarray(data["X_TRIM"][i].squeeze()[list(spec["state_idx"])], dtype=jnp.float32)
-        self.u_trim = jnp.asarray(data["U_TRIM"][i].squeeze()[list(spec["input_idx"])], dtype=jnp.float32)
-        self.trim_idx = trim_idx
-        self.tilt_deg = (trim_idx - 1) * 5
+        self.A          = jnp.asarray(data[spec["A_key"]][i], dtype=jnp.float32)
+        self.B          = jnp.asarray(data[spec["B_key"]][i], dtype=jnp.float32)
+        self.x_trim     = jnp.asarray(data["X_TRIM"][i].squeeze()[list(spec["state_idx"])], dtype=jnp.float32)
+        self.u_trim     = jnp.asarray(data["U_TRIM"][i].squeeze()[list(spec["input_idx"])], dtype=jnp.float32)
+        self.trim_idx   = trim_idx
+        self.tilt_deg   = (trim_idx - 1) * 5
         self.axis = axis
 
         self.ctrl_lb, self.ctrl_ub = self.control_bound(cfg)
@@ -139,15 +139,15 @@ class U4Linear(dynamics.ControlAndDisturbanceAffineDynamics):
         where the physical limits come from `cfg["dynamics"]` and the
         perturbation limits (+-Delta) from the per-axis config section.
         """
-        spec = AXIS_SPEC[self.axis]
-        phys = cfg["dynamics"]
-        axis_cfg = cfg[spec["cfg_key"]]
-        names = spec["input_names"]
+        spec        = AXIS_SPEC[self.axis]
+        phys        = cfg["dynamics"]
+        axis_cfg    = cfg[spec["cfg_key"]]
+        names       = spec["input_names"]
 
-        phys_lb = jnp.array([phys[f"input_min_{name}"] for name in names], dtype=jnp.float32)
-        phys_ub = jnp.array([phys[f"input_max_{name}"] for name in names], dtype=jnp.float32)
-        delta_lb = jnp.array([axis_cfg[f"input_min_{name}"] for name in names], dtype=jnp.float32)
-        delta_ub = jnp.array([axis_cfg[f"input_max_{name}"] for name in names], dtype=jnp.float32)
+        phys_lb     = jnp.array([phys[f"input_min_{name}"] for name in names], dtype=jnp.float32)
+        phys_ub     = jnp.array([phys[f"input_max_{name}"] for name in names], dtype=jnp.float32)
+        delta_lb    = jnp.array([axis_cfg[f"input_min_{name}"] for name in names], dtype=jnp.float32)
+        delta_ub    = jnp.array([axis_cfg[f"input_max_{name}"] for name in names], dtype=jnp.float32)
 
         ctrl_lb = jnp.maximum(phys_lb, self.u_trim + delta_lb) - self.u_trim
         ctrl_ub = jnp.minimum(phys_ub, self.u_trim + delta_ub) - self.u_trim

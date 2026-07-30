@@ -85,20 +85,20 @@ for trim_idx in range(hj_cfg["trim_idx_start"], hj_cfg["trim_idx_end"] + 1):
     print(f"Reachability analysis for U4_{axis.upper()} (tilt {tilt_deg} deg) completed.")
     print(f"Results saved to {os.path.join(OUTPUT_DIR, stem + '.npy')}")
 
-    slicer = tuple(slice(None) if dim in plot_dims else n // 2 for dim, n in enumerate(grid_shape))
-    x_dim, y_dim = plot_dims
-    plt.figure(figsize=(8, 6))
-    # plt.contourf(grid.coordinate_vectors[x_dim], grid.coordinate_vectors[y_dim],
-    #                 np.asarray(target_values[slicer]).T)
-    # plt.imshow(np.asarray(target_values[slicer]).T, extent=[grid_lo[0], grid_hi[0], grid_lo[1], grid_hi[1],],
-    #            origin='lower', aspect='auto', cmap='viridis')
-    plt.pcolormesh(grid.coordinate_vectors[x_dim], grid.coordinate_vectors[y_dim],
-                    np.asarray(target_values[slicer]).T, cmap='viridis', shading='gouraud', vmin=np.asarray(target_values[slicer]).T.min(), vmax=0)
-    plt.colorbar()
-    plt.contour(grid.coordinate_vectors[x_dim], grid.coordinate_vectors[y_dim],
-                np.asarray(target_values[slicer]).T, levels=0, colors="black", linewidths=2)
-    plt.xlabel(state_names[x_dim])
-    plt.ylabel(state_names[y_dim])
-    plt.title(f"U4 {axis.upper()} {mode.upper()}, tilt {tilt_deg} deg")
-    plt.savefig(os.path.join(OUTPUT_DIR, f"{stem}.png"), dpi=150)
-    plt.close()
+# slicer = tuple(slice(None) if dim in plot_dims else n // 2 for dim, n in enumerate(grid_shape))
+# x_dim, y_dim = plot_dims
+# plt.figure(figsize=(8, 6))
+# plt.contourf(grid.coordinate_vectors[x_dim], grid.coordinate_vectors[y_dim],
+#                 np.asarray(target_values[slicer]).T)
+# plt.imshow(np.asarray(target_values[slicer]).T, extent=[grid_lo[0], grid_hi[0], grid_lo[1], grid_hi[1],],
+#            origin='lower', aspect='auto', cmap='viridis')
+# plt.pcolormesh(grid.coordinate_vectors[x_dim], grid.coordinate_vectors[y_dim],
+#                 np.asarray(target_values[slicer]).T, cmap='viridis', shading='gouraud', vmin=np.asarray(target_values[slicer]).T.min(), vmax=0)
+# plt.colorbar()
+# plt.contour(grid.coordinate_vectors[x_dim], grid.coordinate_vectors[y_dim],
+#             np.asarray(target_values[slicer]).T, levels=0, colors="black", linewidths=2)
+# plt.xlabel(state_names[x_dim])
+# plt.ylabel(state_names[y_dim])
+# plt.title(f"U4 {axis.upper()} {mode.upper()}, tilt {tilt_deg} deg")
+# plt.savefig(os.path.join(OUTPUT_DIR, f"{stem}.png"), dpi=150)
+# plt.close()
