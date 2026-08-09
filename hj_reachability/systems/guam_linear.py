@@ -147,6 +147,7 @@ class GuamLinear(dynamics.ControlAndDisturbanceAffineDynamics):
             dist_max = jnp.broadcast_to(jnp.asarray(cfg[spec["cfg_key"]]["dist_max"], dtype=jnp.float32),
                                         (self.A.shape[0],))
             disturbance_space = sets.Box(-dist_max, dist_max)
+            
         super().__init__(control_mode, disturbance_mode, control_space, disturbance_space)
 
     def control_bound(self, cfg):

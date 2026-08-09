@@ -74,16 +74,17 @@ target_time = time_sign * hj_cfg["time"]
 # matching the plotDims used in U4_HJIR.m.
 plot_dims = (0, 1) if axis == "lon" else (2, 3)
 
-for trim_idx in range(hj_cfg["trim_idx_start"], hj_cfg["trim_idx_end"] + 1):
-    u4_dynamics = hj.systems.U4Linear(cfg, trim_idx, axis, control_mode, disturbance_mode)
+trim_idx = hj_cfg["trim_idx_end"]
+# for trim_idx in range(hj_cfg["trim_idx_start"], hj_cfg["trim_idx_end"] + 1):
+u4_dynamics = hj.systems.U4Linear(cfg, trim_idx, axis, control_mode, disturbance_mode)
 
-    target_values = hj.step(solver_settings, u4_dynamics, grid, time, values, target_time)
+target_values = hj.step(solver_settings, u4_dynamics, grid, time, values, target_time)
 
-    tilt_deg = u4_dynamics.tilt_deg
-    stem = f"U4_{axis.upper()}_{mode.upper()}_TILT{tilt_deg}"
-    np.save(os.path.join(OUTPUT_DIR, f"{stem}.npy"), np.asarray(target_values))
-    print(f"Reachability analysis for U4_{axis.upper()} (tilt {tilt_deg} deg) completed.")
-    print(f"Results saved to {os.path.join(OUTPUT_DIR, stem + '.npy')}")
+tilt_deg = u4_dynamics.tilt_deg
+stem = f"U4_{axis.upper()}_{mode.upper()}_TILT{tilt_deg}"
+np.save(os.path.join(OUTPUT_DIR, f"{stem}.npy"), np.asarray(target_values))
+print(f"Reachability analysis for U4_{axis.upper()} (tilt {tilt_deg} deg) completed.")
+print(f"Results saved to {os.path.join(OUTPUT_DIR, stem + '.npy')}")
 
 # slicer = tuple(slice(None) if dim in plot_dims else n // 2 for dim, n in enumerate(grid_shape))
 # x_dim, y_dim = plot_dims

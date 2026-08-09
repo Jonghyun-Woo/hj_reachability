@@ -151,7 +151,7 @@ class U4Linear(dynamics.ControlAndDisturbanceAffineDynamics):
 
         ctrl_lb = jnp.maximum(phys_lb, self.u_trim + delta_lb) - self.u_trim
         ctrl_ub = jnp.minimum(phys_ub, self.u_trim + delta_ub) - self.u_trim
-        return ctrl_lb, ctrl_ub
+        return jnp.deg2rad(ctrl_lb), jnp.deg2rad(ctrl_ub)  # convert to radians for the angle inputs
 
     def open_loop_dynamics(self, state, time):
         return self.A @ state

@@ -3,10 +3,10 @@
 mat_path: hj_reachability/systems/U4_TrimLinear_mcode.mat
 
 hj_analysis_config:
-  axis: lon        # lon or lat
+  axis: lat        # lon or lat
   mode: brt        # brs / frs / brt / frt
-  accuracy: very_high   # low / medium / high / very_high
-  time: 1        # horizon (s); integration direction follows the mode / lat: 0.05s / lon: 0.5s
+  accuracy: high   # low / medium / high / very_high
+  time: 0.05        # horizon (s); integration direction follows the mode / lat: 0.05s / lon: 1s
   trim_idx_start: 1   # trim_idx 1..19 <-> tilt angle 0:5:90 (deg)
   trim_idx_end: 19
 
@@ -40,18 +40,18 @@ longitudinal:
   # Grid settings
   grid_min_u: -5.0      # (m/s)
   grid_min_w: -35.0     # (m/s)
-  grid_min_q: -3.0      # (rad/s)
-  grid_min_theta: -0.75 # (rad)
+  grid_min_q: -4      # (rad/s)
+  grid_min_theta: -0.90 # (rad)
 
   grid_max_u: 5.0       # (m/s)
   grid_max_w: 35.0      # (m/s)
-  grid_max_q: 3.0       # (rad/s)
-  grid_max_theta: 0.75  # (rad)
+  grid_max_q: 4       # (rad/s)
+  grid_max_theta: 0.90  # (rad)
 
   grid_number_u: 41
-  grid_number_w: 81
+  grid_number_w: 131
   grid_number_q: 91
-  grid_number_theta: 31
+  grid_number_theta: 41
 
   # Input perturbation limits about trim (+-Delta)
   input_min_Pi: -10.0      # (%)

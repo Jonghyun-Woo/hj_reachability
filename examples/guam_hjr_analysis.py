@@ -15,6 +15,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 from pathlib import Path
+import scipy.io
 import yaml
 
 import hj_reachability as hj
@@ -74,29 +75,31 @@ target_time = time_sign * hj_cfg["time"]
 # matching the plotDims used in GUAM_HJIR.m: lon -> (u, w), lat -> (r, phi).
 plot_dims = (0, 1) if axis == "lon" else (2, 3)
 
+# GUAM wind/gust disturbance bounds per uh_idx trim point (column j <-> uh_idx
+# j+1), from disturbance_lb_ub_10mps.mat. Rows are body axes: dF (ft/s^2) ->
+# [ax, ay, az], dM (rad/s^2) -> [roll, pitch, yaw]. Each state is driven by the
+# body force/moment acting on it; the attitude states (theta/phi) have none.
+dist_mat = scipy.io.loadmat(REPO_ROOT / "hj_reachability" / "systems" / "disturbance_lb_ub_10mps.mat")
+dist_source = {
+    "lon": (("dF", 0), ("dF", 2), ("dM", 1), None),  # u, w, q, theta
+    "lat": (("dF", 1), ("dM", 0), ("dM", 2), None),  # v, p, r, phi
+}[axis]
+
 wh_idx = hj_cfg["wh_idx"]
 for uh_idx in range(hj_cfg["uh_idx_start"], hj_cfg["uh_idx_end"] + 1):
-    guam_dynamics = hj.systems.GuamLinear(cfg, uh_idx, wh_idx, axis, control_mode, disturbance_mode)
+    # uh_idx = 20
+    col = uh_idx - 1
+    dist_lb = [0. if src is None else dist_mat[f"min_{src[0]}"][src[1], col] for src in dist_source]
+    dist_ub = [0. if src is None else dist_mat[f"max_{src[0]}"][src[1], col] for src in dist_source]
+    disturbance_space = hj.sets.Box(jnp.asarray(dist_lb, dtype=jnp.float32),
+                                    jnp.asarray(dist_ub, dtype=jnp.float32))
+    guam_dynamics = hj.systems.GuamLinear(cfg, uh_idx, wh_idx, axis, control_mode, disturbance_mode,
+                                            disturbance_space=disturbance_space)
 
     target_values = hj.step(solver_settings, guam_dynamics, grid, time, values, target_time)
 
     stem = f"GUAM_{axis.upper()}_{mode.upper()}_UH{uh_idx}_WH{wh_idx}"
     np.save(os.path.join(OUTPUT_DIR, f"{stem}.npy"), np.asarray(target_values))
     print(f"Reachability analysis for GUAM_{axis.upper()} "
-          f"(UH {guam_dynamics.uh:.1f} ft/s, WH {guam_dynamics.wh:.1f} ft/s) completed.")
+            f"(UH {guam_dynamics.uh:.1f} ft/s, WH {guam_dynamics.wh:.1f} ft/s) completed.")
     print(f"Results saved to {os.path.join(OUTPUT_DIR, stem + '.npy')}")
-
-    slicer = tuple(slice(None) if dim in plot_dims else n // 2 for dim, n in enumerate(grid_shape))
-    x_dim, y_dim = plot_dims
-    plt.figure(figsize=(8, 6))
-    plt.pcolormesh(grid.coordinate_vectors[x_dim], grid.coordinate_vectors[y_dim],
-                   np.asarray(target_values[slicer]).T, cmap='viridis', shading='gouraud',
-                   vmin=np.asarray(target_values[slicer]).T.min(), vmax=0)
-    plt.colorbar()
-    plt.contour(grid.coordinate_vectors[x_dim], grid.coordinate_vectors[y_dim],
-                np.asarray(target_values[slicer]).T, levels=0, colors="black", linewidths=2)
-    plt.xlabel(state_names[x_dim])
-    plt.ylabel(state_names[y_dim])
-    plt.title(f"GUAM {axis.upper()} {mode.upper()}, UH {guam_dynamics.uh:.1f} ft/s, WH {guam_dynamics.wh:.1f} ft/s")
-    plt.savefig(os.path.join(OUTPUT_DIR, f"{stem}.png"), dpi=150)
-    plt.close()
