@@ -29,7 +29,6 @@ dynamics:
 
 longitudinal:
   # States: [u (ft/s), w (ft/s), q (rad/s), theta (rad)], deviation from trim
-  # Target set settings (Config.lon_target_ub in helperOC)
   target_min_u: -3.0
   target_min_w: -1.0
   target_min_q: -0.05
@@ -40,15 +39,6 @@ longitudinal:
   target_max_q: 0.05
   target_max_theta: 0.05
 
-  # Grid settings (Config.lon_grid_max / lon_grid_num in helperOC)
-  # Bounds sized to the worst-case BRT reach over uh_idx 1..20 at time=1.5s
-  # (measured extent u [-28,30], w [-47.2,28.5], q [-1.36,1.20], theta
-  # [-1.04,1.16]) plus ~5-cell margin, so the tube stays inside the grid.
-  # Each axis is aligned so that deviation 0 is a grid node (symmetric axes use
-  # an odd count; w's bounds are integer multiples of dx). This places a node at
-  # the target-set center so its signed-distance apex/kink (value -0.05) is
-  # captured, and keeps dx near the previous resolution (u 1.0, w 0.75 ft/s;
-  # q 0.043 rad/s, theta 0.044 rad).
   grid_min_u: -35.0     # (ft/s)
   grid_min_w: -52.5     # (ft/s)
   grid_min_q: -1.55     # (rad/s)
@@ -81,7 +71,6 @@ longitudinal:
 
 lateral:
   # States: [v (ft/s), p (rad/s), r (rad/s), phi (rad)], deviation from trim
-  # Target set settings (Config.lat_target_ub in helperOC)
   target_min_v: -3.0    # (ft/s)
   target_min_p: -0.05   # (rad/s)
   target_min_r: -0.05   # (rad/s)
@@ -93,20 +82,20 @@ lateral:
   target_max_phi: 0.05  # (rad)
 
   # Grid settings (Config.lat_grid_max / lat_grid_num in helperOC)
-  grid_min_v: -25.0     # was -20.0
-  grid_min_p: -8.0      # was -6.5
-  grid_min_r: -0.25     # was -0.35  (과대 → 축소, 선택)
-  grid_min_phi: -3.0    # was -2.4
+  grid_min_v: -25.0
+  grid_min_p: -8.0
+  grid_min_r: -0.25
+  grid_min_phi: -3.0
 
   grid_max_v: 25.0
   grid_max_p: 8.0
   grid_max_r: 0.25
   grid_max_phi: 3.0
 
-  grid_number_v: 51     # was 41   (dx≈1.0 ft/s 유지)
-  grid_number_p: 371    # was 301  (dx≈0.043 rad/s 유지)
-  grid_number_r: 15     # was 21   (dx≈0.036 유지)
-  grid_number_phi: 139  # was 111  (dx≈0.043 rad 유지)
+  grid_number_v: 51     # (ft/s)
+  grid_number_p: 371    # (rad/s)
+  grid_number_r: 15     # (rad/s)
+  grid_number_phi: 139  # (rad)
   
   
   # Input perturbation limits about trim (+-Delta), from GUAM_Config:
