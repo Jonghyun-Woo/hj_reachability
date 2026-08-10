@@ -2,10 +2,10 @@
 mat_path: hj_reachability/systems/trim_table_Poly_ConcatVer4p0.mat
 
 hj_analysis_config:
-  axis: lat             # lon or lat
+  axis: lon             # lon or lat
   mode: brt             # brs / frs / brt / frt
   accuracy: very_high   # low / medium / high / very_high
-  time: 1               # horizon (s); integration direction follows the mode
+  time: 1.5               # horizon (s); integration direction follows the mode / lom: 1.5s, lat: 1.0s, lom: 1.5s, lat: 1.0s
   uh_idx_start: 1       # uh_idx 1..28 <-> trim airspeed UH (ft/s); Config.u_idx_range in helperOC
   uh_idx_end: 20
   wh_idx: 3             # wh_idx 1..3 <-> trim vertical speed WH = [-7.5, 0, 11.67] (ft/s)
@@ -31,40 +31,48 @@ longitudinal:
   # States: [u (ft/s), w (ft/s), q (rad/s), theta (rad)], deviation from trim
   # Target set settings (Config.lon_target_ub in helperOC)
   target_min_u: -3.0
-  target_min_w: -1.5
+  target_min_w: -1.0
   target_min_q: -0.05
   target_min_theta: -0.05
 
   target_max_u: 3.0
-  target_max_w: 1.5
+  target_max_w: 1.0
   target_max_q: 0.05
   target_max_theta: 0.05
 
   # Grid settings (Config.lon_grid_max / lon_grid_num in helperOC)
-  grid_min_u: -16.0     # (ft/s)
-  grid_min_w: -40.0     # (ft/s)
-  grid_min_q: -1.5      # (rad/s)
-  grid_min_theta: -0.75 # (rad)
+  # Bounds sized to the worst-case BRT reach over uh_idx 1..20 at time=1.5s
+  # (measured extent u [-28,30], w [-47.2,28.5], q [-1.36,1.20], theta
+  # [-1.04,1.16]) plus ~5-cell margin, so the tube stays inside the grid.
+  # Each axis is aligned so that deviation 0 is a grid node (symmetric axes use
+  # an odd count; w's bounds are integer multiples of dx). This places a node at
+  # the target-set center so its signed-distance apex/kink (value -0.05) is
+  # captured, and keeps dx near the previous resolution (u 1.0, w 0.75 ft/s;
+  # q 0.043 rad/s, theta 0.044 rad).
+  grid_min_u: -35.0     # (ft/s)
+  grid_min_w: -52.5     # (ft/s)
+  grid_min_q: -1.55     # (rad/s)
+  grid_min_theta: -1.35 # (rad)
 
-  grid_max_u: 16.0      # (ft/s)
-  grid_max_w: 35.0      # (ft/s)
-  grid_max_q: 1.5       # (rad/s)
-  grid_max_theta: 0.75  # (rad)
+  grid_max_u: 35.0      # (ft/s)
+  grid_max_w: 33.75     # (ft/s)
+  grid_max_q: 1.55      # (rad/s)
+  grid_max_theta: 1.35  # (rad)
 
-  grid_number_u: 41
-  grid_number_w: 61
-  grid_number_q: 81
-  grid_number_theta: 51
+  grid_number_u: 71     # dx=1.000 ft/s
+  grid_number_w: 111    # dx=0.750 ft/s
+  grid_number_q: 73     # dx=0.0431 rad/s
+  grid_number_theta: 63 # dx=0.0435 rad
 
   # Input perturbation limits about trim (+-Delta), from GUAM_Config:
-  # Delta_lift = Delta_push = 300 RPM, Delta_surf = 15 deg
-  input_min_Pi: -31.4159     # lift rotor speed (rad/s)
-  input_min_Pi_p: -31.4159   # pusher rotor speed (rad/s)
-  input_min_delta_e: -0.2618 # elevator (rad)
-  input_min_delta_f: -0.2618 # flap (rad)
+  # Delta_lift = 300 RPM, Delta_push = 500 RPM, Delta_surf = 15 deg
+  input_min_Pi: -31.4159        # lift rotor speed (rad/s)
+  input_min_Pi_p: -52.3598      # pusher rotor speed (rad/s)
+  input_min_delta_e: -0.2618  # elevator (rad)
+  input_min_delta_f: -0.2618  # flap (rad)
 
   input_max_Pi: 31.4159
-  input_max_Pi_p: 31.4159
+  input_max_Pi_p: 52.3598
   input_max_delta_e: 0.2618
   input_max_delta_f: 0.2618
 
@@ -85,28 +93,29 @@ lateral:
   target_max_phi: 0.05  # (rad)
 
   # Grid settings (Config.lat_grid_max / lat_grid_num in helperOC)
-  grid_min_v: -20.0     # (ft/s)
-  grid_min_p: -6.5      # (rad/s)
-  grid_min_r: -0.35     # (rad/s)
-  grid_min_phi: -2.25   # (rad)
+  grid_min_v: -25.0     # was -20.0
+  grid_min_p: -8.0      # was -6.5
+  grid_min_r: -0.25     # was -0.35  (과대 → 축소, 선택)
+  grid_min_phi: -3.0    # was -2.4
 
-  grid_max_v: 20.0      # (ft/s)
-  grid_max_p: 6.5       # (rad/s)
-  grid_max_r: 0.35      # (rad/s)
-  grid_max_phi: 2.25    # (rad)
+  grid_max_v: 25.0
+  grid_max_p: 8.0
+  grid_max_r: 0.25
+  grid_max_phi: 3.0
 
-  grid_number_v: 41
-  grid_number_p: 301
-  grid_number_r: 21
-  grid_number_phi: 111
-
+  grid_number_v: 51     # was 41   (dx≈1.0 ft/s 유지)
+  grid_number_p: 371    # was 301  (dx≈0.043 rad/s 유지)
+  grid_number_r: 15     # was 21   (dx≈0.036 유지)
+  grid_number_phi: 139  # was 111  (dx≈0.043 rad 유지)
+  
+  
   # Input perturbation limits about trim (+-Delta), from GUAM_Config:
-  # Delta_lift = 150 RPM, Delta_surf = 10 deg
-  input_min_Pi: -15.7080     # lift rotor speed (rad/s)
+  # Delta_lift = 120 RPM, Delta_surf = 10 deg
+  input_min_Pi: -12.5664     # lift rotor speed (rad/s)
   input_min_delta_a: -0.2618 # aileron (rad)
   input_min_delta_r: -0.2618 # rudder (rad)
 
-  input_max_Pi: 15.7080
+  input_max_Pi: 12.5664
   input_max_delta_a: 0.2618
   input_max_delta_r: 0.2618
 
