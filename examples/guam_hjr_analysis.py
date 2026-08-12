@@ -79,7 +79,7 @@ plot_dims = (0, 1) if axis == "lon" else (2, 3)
 # j+1), from disturbance_lb_ub_10mps.mat. Rows are body axes: dF (ft/s^2) ->
 # [ax, ay, az], dM (rad/s^2) -> [roll, pitch, yaw]. Each state is driven by the
 # body force/moment acting on it; the attitude states (theta/phi) have none.
-dist_mat = scipy.io.loadmat(REPO_ROOT / "hj_reachability" / "systems" / "disturbance_lb_ub_10mps.mat")
+dist_mat = scipy.io.loadmat(REPO_ROOT / "hj_reachability" / "systems" / "guam_disturbance_lb_ub_10mps.mat")
 dist_source = {
     "lon": (("dF", 0), ("dF", 2), ("dM", 1), None),  # u, w, q, theta
     "lat": (("dF", 1), ("dM", 0), ("dM", 2), None),  # v, p, r, phi

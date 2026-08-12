@@ -24,11 +24,11 @@ from hj_reachability import sets
 TRIM_KEYS = ("A_LAT_all", "A_LON_all", "B_LAT_all", "B_LON_all", "U_TRIM", "X_TRIM")
 
 # X_TRIM order: [u v w p q r phi theta psi x y z]
-# U_TRIM order: [Pi (%), delta_a (deg), delta_e (deg), delta_r (deg), tilt (deg), ...]
+# U_TRIM order: [Pi (%), delta_a (rad), delta_e (rad), delta_r (rad), tilt (rad), ...]
 AXIS_SPEC = {
     "lon": {
         # States: [u (m/s), w (m/s), q (rad/s), theta (rad)]
-        # Inputs: [Pi (%), delta_e (deg), tilt (deg)]
+        # Inputs: [Pi (%), delta_e (rad), tilt (rad)]
         "A_key": "A_LON_all",
         "B_key": "B_LON_all",
         "state_idx": (0, 2, 4, 7),
@@ -39,7 +39,7 @@ AXIS_SPEC = {
     },
     "lat": {
         # States: [v (m/s), p (rad/s), r (rad/s), phi (rad)]
-        # Inputs: [delta_a (deg), delta_r (deg), tilt (deg)]
+        # Inputs: [delta_a (rad), delta_r (rad), tilt (rad)]
         "A_key": "A_LAT_all",
         "B_key": "B_LAT_all",
         "state_idx": (1, 3, 5, 6),
@@ -151,7 +151,7 @@ class U4Linear(dynamics.ControlAndDisturbanceAffineDynamics):
 
         ctrl_lb = jnp.maximum(phys_lb, self.u_trim + delta_lb) - self.u_trim
         ctrl_ub = jnp.minimum(phys_ub, self.u_trim + delta_ub) - self.u_trim
-        return jnp.deg2rad(ctrl_lb), jnp.deg2rad(ctrl_ub)  # convert to radians for the angle inputs
+        return ctrl_lb, ctrl_ub  # already in radians; U_TRIM and config limits are in rad
 
     def open_loop_dynamics(self, state, time):
         return self.A @ state

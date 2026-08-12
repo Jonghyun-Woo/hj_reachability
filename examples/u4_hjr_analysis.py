@@ -15,6 +15,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 from pathlib import Path
+import scipy.io
 import yaml
 
 import hj_reachability as hj
@@ -74,32 +75,48 @@ target_time = time_sign * hj_cfg["time"]
 # matching the plotDims used in U4_HJIR.m.
 plot_dims = (0, 1) if axis == "lon" else (2, 3)
 
-trim_idx = hj_cfg["trim_idx_end"]
-# for trim_idx in range(hj_cfg["trim_idx_start"], hj_cfg["trim_idx_end"] + 1):
-u4_dynamics = hj.systems.U4Linear(cfg, trim_idx, axis, control_mode, disturbance_mode)
+# U4 wind/gust disturbance bounds per trim point (column j <-> trim_idx j+1),
+# from u4_disturbance_lb_ub_10mps.mat. Rows are body axes: dF (m/s^2) ->
+# [ax, ay, az], dM (rad/s^2) -> [roll, pitch, yaw]. Each state is driven by the
+# body force/moment acting on it; the attitude states (theta/phi) have none.
+dist_mat = scipy.io.loadmat(REPO_ROOT / "hj_reachability" / "systems" / "u4_disturbance_lb_ub_3mps.mat")
+dist_source = {
+    "lon": (("dF", 0), ("dF", 2), ("dM", 1), None),  # u, w, q, theta
+    "lat": (("dF", 1), ("dM", 0), ("dM", 2), None),  # v, p, r, phi
+}[axis]
 
-target_values = hj.step(solver_settings, u4_dynamics, grid, time, values, target_time)
+# trim_idx = hj_cfg["trim_idx_end"]
+for trim_idx in range(hj_cfg["trim_idx_start"], hj_cfg["trim_idx_end"] + 1):
+    col = trim_idx - 1
+    dist_lb = [0. if src is None else dist_mat[f"min_{src[0]}"][src[1], col] for src in dist_source]
+    dist_ub = [0. if src is None else dist_mat[f"max_{src[0]}"][src[1], col] for src in dist_source]
+    disturbance_space = hj.sets.Box(jnp.asarray(dist_lb, dtype=jnp.float32),
+                                    jnp.asarray(dist_ub, dtype=jnp.float32))
+    u4_dynamics = hj.systems.U4Linear(cfg, trim_idx, axis, control_mode, disturbance_mode,
+                                    disturbance_space=disturbance_space)
 
-tilt_deg = u4_dynamics.tilt_deg
-stem = f"U4_{axis.upper()}_{mode.upper()}_TILT{tilt_deg}"
-np.save(os.path.join(OUTPUT_DIR, f"{stem}.npy"), np.asarray(target_values))
-print(f"Reachability analysis for U4_{axis.upper()} (tilt {tilt_deg} deg) completed.")
-print(f"Results saved to {os.path.join(OUTPUT_DIR, stem + '.npy')}")
+    target_values = hj.step(solver_settings, u4_dynamics, grid, time, values, target_time)
 
-# slicer = tuple(slice(None) if dim in plot_dims else n // 2 for dim, n in enumerate(grid_shape))
-# x_dim, y_dim = plot_dims
-# plt.figure(figsize=(8, 6))
-# plt.contourf(grid.coordinate_vectors[x_dim], grid.coordinate_vectors[y_dim],
-#                 np.asarray(target_values[slicer]).T)
-# plt.imshow(np.asarray(target_values[slicer]).T, extent=[grid_lo[0], grid_hi[0], grid_lo[1], grid_hi[1],],
-#            origin='lower', aspect='auto', cmap='viridis')
-# plt.pcolormesh(grid.coordinate_vectors[x_dim], grid.coordinate_vectors[y_dim],
-#                 np.asarray(target_values[slicer]).T, cmap='viridis', shading='gouraud', vmin=np.asarray(target_values[slicer]).T.min(), vmax=0)
-# plt.colorbar()
-# plt.contour(grid.coordinate_vectors[x_dim], grid.coordinate_vectors[y_dim],
-#             np.asarray(target_values[slicer]).T, levels=0, colors="black", linewidths=2)
-# plt.xlabel(state_names[x_dim])
-# plt.ylabel(state_names[y_dim])
-# plt.title(f"U4 {axis.upper()} {mode.upper()}, tilt {tilt_deg} deg")
-# plt.savefig(os.path.join(OUTPUT_DIR, f"{stem}.png"), dpi=150)
-# plt.close()
+    tilt_deg = u4_dynamics.tilt_deg
+    stem = f"U4_{axis.upper()}_{mode.upper()}_TILT{tilt_deg}"
+    np.save(os.path.join(OUTPUT_DIR, f"{stem}.npy"), np.asarray(target_values))
+    print(f"Reachability analysis for U4_{axis.upper()} (tilt {tilt_deg} deg) completed.")
+    print(f"Results saved to {os.path.join(OUTPUT_DIR, stem + '.npy')}")
+
+    slicer = tuple(slice(None) if dim in plot_dims else n // 2 for dim, n in enumerate(grid_shape))
+    x_dim, y_dim = plot_dims
+    plt.figure(figsize=(8, 6))
+    plt.contourf(grid.coordinate_vectors[x_dim], grid.coordinate_vectors[y_dim],
+                    np.asarray(target_values[slicer]).T)
+    plt.imshow(np.asarray(target_values[slicer]).T, extent=[grid_lo[0], grid_hi[0], grid_lo[1], grid_hi[1],],
+            origin='lower', aspect='auto', cmap='viridis')
+    plt.pcolormesh(grid.coordinate_vectors[x_dim], grid.coordinate_vectors[y_dim],
+                    np.asarray(target_values[slicer]).T, cmap='viridis', shading='gouraud', vmin=np.asarray(target_values[slicer]).T.min(), vmax=0)
+    plt.colorbar()
+    plt.contour(grid.coordinate_vectors[x_dim], grid.coordinate_vectors[y_dim],
+                np.asarray(target_values[slicer]).T, levels=[0], colors="black", linewidths=2)
+    plt.xlabel(state_names[x_dim])
+    plt.ylabel(state_names[y_dim])
+    plt.title(f"U4 {axis.upper()} {mode.upper()}, tilt {tilt_deg} deg")
+    plt.savefig(os.path.join(OUTPUT_DIR, f"{stem}.png"), dpi=150)
+    plt.close()
