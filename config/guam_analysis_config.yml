@@ -5,7 +5,7 @@ hj_analysis_config:
   axis: lon             # lon or lat
   mode: brt             # brs / frs / brt / frt
   accuracy: very_high   # low / medium / high / very_high
-  time: 1.5               # horizon (s); integration direction follows the mode / lom: 1.5s, lat: 1.0s, lom: 1.5s, lat: 1.0s
+  time: 1.5             # horizon (s); integration direction follows the mode / lon: 1.5s, lat: 1.0s
   uh_idx_start: 1       # uh_idx 1..28 <-> trim airspeed UH (ft/s); Config.u_idx_range in helperOC
   uh_idx_end: 20
   wh_idx: 3             # wh_idx 1..3 <-> trim vertical speed WH = [-7.5, 0, 11.67] (ft/s)

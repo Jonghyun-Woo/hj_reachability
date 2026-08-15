@@ -6,61 +6,64 @@ hj_analysis_config:
   axis: lon             # lon or lat
   mode: brt             # brs / frs / brt / frt
   accuracy: very_high   # low / medium / high / very_high
-  time: 1               # horizon (s); integration direction follows the mode / lat: 0.05s / lon: 1s
+  time: 1.5               # horizon (s); integration direction follows the mode / lon: 1s
   trim_idx_start: 1     # trim_idx 1..19 <-> tilt angle 0:5:90 (deg)
   trim_idx_end: 19
 
-# Physical (absolute) actuator limits
+# Physical (absolute) actuator limits, keyed by actuator type
+# (thr: EDF throttle %, ail: aileron, rv: ruddervator L/R, tilt: EDF tilt)
 dynamics:
-  input_min_Pi: 0.0       # (%)
+  input_min_thr: 0.0        # (%)
+  input_min_ail: -0.5236    # (rad)
+  input_min_rv: -0.3291     # (rad)
   input_min_tilt: -0.1745   # (rad)
-  input_min_delta_a: -0.5236 # (rad)
-  input_min_delta_e: -0.3291 # (rad)
-  input_min_delta_r: -0.3291 # (rad)
 
-  input_max_Pi: 100.0
+  input_max_thr: 100.0
+  input_max_ail: 0.5236
+  input_max_rv: 0.3291
   input_max_tilt: 1.7453
-  input_max_delta_a: 0.5236
-  input_max_delta_e: 0.3291
-  input_max_delta_r: 0.3291
 
 longitudinal:
   # States: [u (m/s), w (m/s), q (rad/s), theta (rad)], deviation from trim
   # Target set settings
-  target_min_u: -1.0
-  target_min_w: -1.0
+  target_min_u: -1.5
+  target_min_w: -1.5
   target_min_q: -0.09
   target_min_theta: -0.09
 
-  target_max_u: 1.0
-  target_max_w: 1.0
+  target_max_u: 1.5
+  target_max_w: 1.5
   target_max_q: 0.09
   target_max_theta: 0.09
 
   # Grid settings
-  grid_min_u: -5.0      # (m/s)
-  grid_min_w: -10.0     # (m/s)
-  grid_min_q: -1        # (rad/s)
-  grid_min_theta: -0.90 # (rad)
+  grid_min_u: -4.0      # (m/s)
+  grid_min_w: -18.0     # (m/s)
+  grid_min_q: -7.0      # (rad/s)
+  grid_min_theta: -1.00 # (rad)
 
-  grid_max_u: 5.0       # (m/s)
-  grid_max_w: 10.0      # (m/s)
-  grid_max_q: 1         # (rad/s)
-  grid_max_theta: 0.90  # (rad)
+  grid_max_u: 4.0       # (m/s)
+  grid_max_w: 18.0      # (m/s)
+  grid_max_q: 7.0       # (rad/s)
+  grid_max_theta: 1.00  # (rad)
 
-  grid_number_u: 41
-  grid_number_w: 81
-  grid_number_q: 61
-  grid_number_theta: 61
+  grid_number_u: 33       # du    ~ 0.25 m/s
+  grid_number_w: 73       # dw    ~ 0.50 m/s
+  grid_number_q: 141      # dq    ~ 0.10 rad/s
+  grid_number_theta: 41   # dtheta~ 0.05 rad
 
-  # Input perturbation limits about trim (+-Delta)
-  input_min_Pi: -20.0       # (%)
-  input_min_delta_e: -0.2618 # (rad)
-  input_min_tilt: -0.1745    # (rad)
+  # Input perturbation limits about trim (+-Delta), per actuator type.
+  # ail has no effect on longitudinal states (B column ~ 0); it is kept only
+  # so the control space spans a uniform 11 physical inputs for both axes.
+  input_min_thr: -10.0       # (%)
+  input_min_ail: -0.0     # (rad)
+  input_min_rv: -0.0872      # (rad)
+  input_min_tilt: -0.0872    # (rad)
 
-  input_max_Pi: 20.0        # (%)
-  input_max_delta_e: 0.2618  # (rad)
-  input_max_tilt: 0.1745     # (rad)
+  input_max_thr: 10.0        # (%)
+  input_max_ail: 0.0      # (rad)
+  input_max_rv: 0.0872       # (rad)
+  input_max_tilt: 0.0872     # (rad)
 
   # Additive per-state disturbance magnitude
   dist_max: 0.0
@@ -94,13 +97,17 @@ lateral:
   grid_number_r: 81
   grid_number_phi: 61
 
-  # Input perturbation limits about trim (+-Delta)
-  input_min_delta_a: -0.0873 # (rad)
-  input_min_delta_r: -0.0873 # (rad)
+  # Input perturbation limits about trim (+-Delta), per actuator type.
+  # thr (differential EDF thrust) now contributes lateral control authority,
+  # which the reduced 3-input model previously ignored.
+  input_min_thr: -20.0       # (%)
+  input_min_ail: -0.0873     # (rad)
+  input_min_rv: -0.0873      # (rad)
   input_min_tilt: -0.0873    # (rad)
 
-  input_max_delta_a: 0.0873  # (rad)
-  input_max_delta_r: 0.0873  # (rad)
+  input_max_thr: 20.0        # (%)
+  input_max_ail: 0.0873      # (rad)
+  input_max_rv: 0.0873       # (rad)
   input_max_tilt: 0.0873     # (rad)
 
   # Additive per-state disturbance magnitude

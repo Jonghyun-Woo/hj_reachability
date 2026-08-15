@@ -5,7 +5,8 @@ arrays (one entry per trim point, MATLAB indices 1..19):
 
     A_LAT_all, A_LON_all : lateral / longitudinal state matrices
     B_LAT_all, B_LON_all : lateral / longitudinal input matrices
-    X_TRIM, U_TRIM       : trim state / trim input at each point
+    X_TRIM               : trim state at each point
+    U_TRIM_IND           : trim input at each point [Thrust (FR, RR, RL, FL), ail, rvL, rvR, Tilt (FR, RR, RL, FL)]
 
 The dynamics are expressed in deviation coordinates about the selected trim
 point, i.e. the grid state is `dx = x - x_trim` and the control is
@@ -21,36 +22,30 @@ import scipy.io
 from hj_reachability import dynamics
 from hj_reachability import sets
 
-TRIM_KEYS = ("A_LAT_all", "A_LON_all", "B_LAT_all", "B_LON_all", "U_TRIM", "X_TRIM")
+TRIM_KEYS = ("A_LAT_all", "A_LON_all", "B_LAT_all", "B_LON_all", "U_TRIM_IND", "X_TRIM")
 
 # X_TRIM order: [u v w p q r phi theta psi x y z]
-# U_TRIM order: [Pi (%), delta_a (rad), delta_e (rad), delta_r (rad), tilt (rad), ...]
 AXIS_SPEC = {
     "lon": {
         # States: [u (m/s), w (m/s), q (rad/s), theta (rad)]
-        # Inputs: [Pi (%), delta_e (rad), tilt (rad)]
         "A_key": "A_LON_all",
         "B_key": "B_LON_all",
         "state_idx": (0, 2, 4, 7),
-        "input_idx": (0, 2, 4),
-        "input_names": ("Pi", "delta_e", "tilt"),
         "cfg_key": "longitudinal",
         "state_names": ("u", "w", "q", "theta"),
     },
     "lat": {
         # States: [v (m/s), p (rad/s), r (rad/s), phi (rad)]
-        # Inputs: [delta_a (rad), delta_r (rad), tilt (rad)]
         "A_key": "A_LAT_all",
         "B_key": "B_LAT_all",
         "state_idx": (1, 3, 5, 6),
-        "input_idx": (1, 3, 4),
-        "input_names": ("delta_a", "delta_r", "tilt"),
         "cfg_key": "lateral",
         "state_names": ("v", "p", "r", "phi"),
     },
 }
 
-
+PHYS_INPUT_NAMES = ("thr_FR", "thr_RR", "thr_RL", "thr_FL", "d_ail", "d_rvL", "d_rvR", "tilt_FR", "tilt_RR", "tilt_RL", "tilt_FL")
+INPUT_TYPES = ("thr", "thr", "thr", "thr", "ail", "rv", "rv", "tilt", "tilt", "tilt", "tilt")
 def load_trim_corridor(mat_path):
     """Loads `Trim_Corridor_Results.mat` and unpacks each 1x19 cell array.
 
@@ -72,11 +67,10 @@ class U4Linear(dynamics.ControlAndDisturbanceAffineDynamics):
 
     Attributes:
         A: State matrix at the selected trim point (4x4).
-        B: Input matrix at the selected trim point (4x3).
+        B: Input matrix at the selected trim point (4x11)
         x_trim: Trim state for the selected axis (lon: [u, w, q, theta],
             lat: [v, p, r, phi]).
-        u_trim: Trim input for the selected axis (lon: [Pi, delta_e, tilt],
-            lat: [delta_a, delta_r, tilt]).
+        u_trim: Trim input (11 physical inputs, `PHYS_INPUT_NAMES` order).
         ctrl_lb, ctrl_ub: Control bounds in deviation coordinates, i.e. the
             allowed perturbation about the trim input clipped to the physical
             actuator limits (same construction as `U4_Config.init_input_bounds`
@@ -114,7 +108,7 @@ class U4Linear(dynamics.ControlAndDisturbanceAffineDynamics):
         self.A          = jnp.asarray(data[spec["A_key"]][i], dtype=jnp.float32)
         self.B          = jnp.asarray(data[spec["B_key"]][i], dtype=jnp.float32)
         self.x_trim     = jnp.asarray(data["X_TRIM"][i].squeeze()[list(spec["state_idx"])], dtype=jnp.float32)
-        self.u_trim     = jnp.asarray(data["U_TRIM"][i].squeeze()[list(spec["input_idx"])], dtype=jnp.float32)
+        self.u_trim     = jnp.asarray(data["U_TRIM_IND"][i].squeeze(), dtype=jnp.float32)
         self.trim_idx   = trim_idx
         self.tilt_deg   = (trim_idx - 1) * 5
         self.axis = axis
@@ -133,25 +127,23 @@ class U4Linear(dynamics.ControlAndDisturbanceAffineDynamics):
     def control_bound(self, cfg):
         """Control bounds in deviation coordinates about the trim input.
 
-        Following `U4_Config.init_input_bounds` in helperOC:
+        Following `U4_Config.init_input_bounds` in helperOC, per physical input:
             lb = max(physical_lb, u_trim - Delta) - u_trim
             ub = min(physical_ub, u_trim + Delta) - u_trim
         where the physical limits come from `cfg["dynamics"]` and the
         perturbation limits (+-Delta) from the per-axis config section.
         """
-        spec        = AXIS_SPEC[self.axis]
+        axis_cfg    = cfg[AXIS_SPEC[self.axis]["cfg_key"]]
         phys        = cfg["dynamics"]
-        axis_cfg    = cfg[spec["cfg_key"]]
-        names       = spec["input_names"]
 
-        phys_lb     = jnp.array([phys[f"input_min_{name}"] for name in names], dtype=jnp.float32)
-        phys_ub     = jnp.array([phys[f"input_max_{name}"] for name in names], dtype=jnp.float32)
-        delta_lb    = jnp.array([axis_cfg[f"input_min_{name}"] for name in names], dtype=jnp.float32)
-        delta_ub    = jnp.array([axis_cfg[f"input_max_{name}"] for name in names], dtype=jnp.float32)
+        phys_lb     = jnp.array([phys[f"input_min_{t}"] for t in INPUT_TYPES], dtype=jnp.float32)
+        phys_ub     = jnp.array([phys[f"input_max_{t}"] for t in INPUT_TYPES], dtype=jnp.float32)
+        delta_lb    = jnp.array([axis_cfg[f"input_min_{t}"] for t in INPUT_TYPES], dtype=jnp.float32)
+        delta_ub    = jnp.array([axis_cfg[f"input_max_{t}"] for t in INPUT_TYPES], dtype=jnp.float32)
 
         ctrl_lb = jnp.maximum(phys_lb, self.u_trim + delta_lb) - self.u_trim
         ctrl_ub = jnp.minimum(phys_ub, self.u_trim + delta_ub) - self.u_trim
-        return ctrl_lb, ctrl_ub  # already in radians; U_TRIM and config limits are in rad
+        return ctrl_lb, ctrl_ub
 
     def open_loop_dynamics(self, state, time):
         return self.A @ state
