@@ -85,9 +85,11 @@ dist_source = {
     "lat": (("dF", 1), ("dM", 0), ("dM", 2), None),  # v, p, r, phi
 }[axis]
 
-cols = slice(hj_cfg["trim_idx_start"] - 1, hj_cfg["trim_idx_end"])
-dist_lb = [0. if src is None else dist_mat[f"min_{src[0]}"][src[1], cols].max() for src in dist_source]
-dist_ub = [0. if src is None else dist_mat[f"max_{src[0]}"][src[1], cols].min() for src in dist_source]
+# cols = slice(hj_cfg["trim_idx_start"] - 1, hj_cfg["trim_idx_end"])
+# dist_lb = [0. if src is None else dist_mat[f"min_{src[0]}"][src[1], cols].max() for src in dist_source]
+# dist_ub = [0. if src is None else dist_mat[f"max_{src[0]}"][src[1], cols].min() for src in dist_source]
+dist_lb = [-1.0, -1.0, -3.5, 0.0]
+dist_ub = [1.0, 1.0, 3.5, 0.0]
 disturbance_space = hj.sets.Box(jnp.asarray(dist_lb, dtype=jnp.float32),
                                 jnp.asarray(dist_ub, dtype=jnp.float32))
 
@@ -97,8 +99,9 @@ for trim_idx in range(hj_cfg["trim_idx_start"], hj_cfg["trim_idx_end"] + 1):
     # dist_ub = [0. if src is None else dist_mat[f"max_{src[0]}"][src[1], col] for src in dist_source]
     # disturbance_space = hj.sets.Box(jnp.asarray(dist_lb, dtype=jnp.float32),
     #                                 jnp.asarray(dist_ub, dtype=jnp.float32))
-    u4_dynamics = hj.systems.U4Linear(cfg, trim_idx, axis, control_mode, disturbance_mode,
-                                    disturbance_space=disturbance_space)
+    # u4_dynamics = hj.systems.U4Linear(cfg, trim_idx, axis, control_mode, disturbance_mode,
+    #                                 disturbance_space=disturbance_space)
+    u4_dynamics = hj.systems.U4Linear(cfg, trim_idx, axis, control_mode, disturbance_mode)
 
     target_values = hj.step(solver_settings, u4_dynamics, grid, time, values, target_time)
 
