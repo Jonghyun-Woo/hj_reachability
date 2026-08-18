@@ -62,8 +62,21 @@ longitudinal:
   input_max_rv: 0.0873    # (rad)
   input_max_tilt: 0.0873  # (rad)
 
-  # Additive per-state disturbance magnitude
-  dist_max: 0.0
+  # Additive per-state disturbance bounds; d_i in [min, max] is added to
+  # dx/dt (see U4Linear.disturbance_jacobian). All 0 means no disturbance.
+  dist:
+    u:
+      min: -1.0    # (m/s^2)
+      max: 1.0
+    w:
+      min: -1.0    # (m/s^2)
+      max: 1.0
+    q:
+      min: -3.5    # (rad/s^2)
+      max: 3.5
+    theta:
+      min: 0.0     # (rad/s)
+      max: 0.0
 
 lateral:
   # States: [v (m/s), p (rad/s), r (rad/s), phi (rad)], deviation from trim
@@ -107,5 +120,18 @@ lateral:
   input_max_rv: 0.0873       # (rad)
   input_max_tilt: 0.0873     # (rad)
 
-  # Additive per-state disturbance magnitude
-  dist_max: 0.0
+  # Additive per-state disturbance bounds; d_i in [min, max] is added to
+  # dx/dt (see U4Linear.disturbance_jacobian). All 0 means no disturbance.
+  dist:
+    v:
+      min: 0.0     # (m/s^2)
+      max: 0.0
+    p:
+      min: 0.0     # (rad/s^2)
+      max: 0.0
+    r:
+      min: 0.0     # (rad/s^2)
+      max: 0.0
+    phi:
+      min: 0.0     # (rad/s)
+      max: 0.0

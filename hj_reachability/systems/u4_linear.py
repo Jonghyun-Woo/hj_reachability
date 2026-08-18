@@ -117,11 +117,14 @@ class U4Linear(dynamics.ControlAndDisturbanceAffineDynamics):
         if control_space is None:
             control_space = sets.Box(self.ctrl_lb, self.ctrl_ub)
         if disturbance_space is None:
-            # Additive per-state disturbance |d_i| <= dist_max, matching
-            # `optDstb` in helperOC; dist_max = 0 means no disturbance.
-            dist_max = jnp.broadcast_to(jnp.asarray(cfg[spec["cfg_key"]]["dist_max"], dtype=jnp.float32),
-                                        (self.A.shape[0],))
-            disturbance_space = sets.Box(-dist_max, dist_max)
+            # Additive per-state disturbance d_i in [min, max] added to dx/dt
+            # (see disturbance_jacobian), matching `optDstb` in helperOC; a
+            # min == max == 0 state means no disturbance. Bounds are keyed by
+            # state name under `dist` in the per-axis config section.
+            dist_cfg = cfg[spec["cfg_key"]]["dist"]
+            dist_lb = jnp.array([dist_cfg[name]["min"] for name in spec["state_names"]], dtype=jnp.float32)
+            dist_ub = jnp.array([dist_cfg[name]["max"] for name in spec["state_names"]], dtype=jnp.float32)
+            disturbance_space = sets.Box(dist_lb, dist_ub)
         super().__init__(control_mode, disturbance_mode, control_space, disturbance_space)
 
     def control_bound(self, cfg):

@@ -15,7 +15,6 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 from pathlib import Path
-import scipy.io
 import yaml
 
 import hj_reachability as hj
@@ -75,32 +74,7 @@ target_time = time_sign * hj_cfg["time"]
 # matching the plotDims used in U4_HJIR.m.
 plot_dims = (0, 1) if axis == "lon" else (2, 3)
 
-# U4 wind/gust disturbance bounds per trim point (column j <-> trim_idx j+1),
-# from u4_disturbance_lb_ub_10mps.mat. Rows are body axes: dF (m/s^2) ->
-# [ax, ay, az], dM (rad/s^2) -> [roll, pitch, yaw]. Each state is driven by the
-# body force/moment acting on it; the attitude states (theta/phi) have none.
-dist_mat = scipy.io.loadmat(REPO_ROOT / "hj_reachability" / "systems" / "u4_disturbance_lb_ub_3mps.mat")
-dist_source = {
-    "lon": (("dF", 0), ("dF", 2), ("dM", 1), None),  # u, w, q, theta
-    "lat": (("dF", 1), ("dM", 0), ("dM", 2), None),  # v, p, r, phi
-}[axis]
-
-# cols = slice(hj_cfg["trim_idx_start"] - 1, hj_cfg["trim_idx_end"])
-# dist_lb = [0. if src is None else dist_mat[f"min_{src[0]}"][src[1], cols].max() for src in dist_source]
-# dist_ub = [0. if src is None else dist_mat[f"max_{src[0]}"][src[1], cols].min() for src in dist_source]
-dist_lb = [-1.0, -1.0, -3.5, 0.0]
-dist_ub = [1.0, 1.0, 3.5, 0.0]
-disturbance_space = hj.sets.Box(jnp.asarray(dist_lb, dtype=jnp.float32),
-                                jnp.asarray(dist_ub, dtype=jnp.float32))
-
 for trim_idx in range(hj_cfg["trim_idx_start"], hj_cfg["trim_idx_end"] + 1):
-    # col = trim_idx - 1
-    # dist_lb = [0. if src is None else dist_mat[f"min_{src[0]}"][src[1], col] for src in dist_source]
-    # dist_ub = [0. if src is None else dist_mat[f"max_{src[0]}"][src[1], col] for src in dist_source]
-    # disturbance_space = hj.sets.Box(jnp.asarray(dist_lb, dtype=jnp.float32),
-    #                                 jnp.asarray(dist_ub, dtype=jnp.float32))
-    # u4_dynamics = hj.systems.U4Linear(cfg, trim_idx, axis, control_mode, disturbance_mode,
-    #                                 disturbance_space=disturbance_space)
     u4_dynamics = hj.systems.U4Linear(cfg, trim_idx, axis, control_mode, disturbance_mode)
 
     target_values = hj.step(solver_settings, u4_dynamics, grid, time, values, target_time)
