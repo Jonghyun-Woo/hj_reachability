@@ -50,6 +50,7 @@ target_half = (target_hi - target_lo) / 2
 target_dist = jnp.abs(grid.states - target_center) - target_half
 values = (jnp.linalg.norm(jnp.maximum(target_dist, 0.), axis=-1)
           + jnp.minimum(jnp.max(target_dist, axis=-1), 0.))
+initial_values = jnp.asarray(values, dtype=jnp.float32)
 
 # Analysis mode: backward (brs/brt) -> control minimizes, disturbance maximizes;
 # forward (frs/frt) -> control maximizes, disturbance minimizes.
@@ -77,7 +78,7 @@ plot_dims = (0, 1) if axis == "lon" else (2, 3)
 for trim_idx in range(hj_cfg["trim_idx_start"], hj_cfg["trim_idx_end"] + 1):
     u4_dynamics = hj.systems.U4Linear(cfg, trim_idx, axis, control_mode, disturbance_mode)
 
-    target_values = hj.step(solver_settings, u4_dynamics, grid, time, values, target_time)
+    target_values = hj.step(solver_settings, u4_dynamics, grid, time, initial_values, target_time)
 
     tilt_deg = u4_dynamics.tilt_deg
     stem = f"U4_{axis.upper()}_{mode.upper()}_TILT{tilt_deg}"

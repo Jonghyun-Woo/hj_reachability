@@ -97,7 +97,7 @@ def main():
     # One separate figure (with a single axes) per panel.
     figs, axes = [], []
     for panel in PANELS:
-        fig = plt.figure(figsize=(20, 10) if panel["kind"] == "2d" else (12, 12))
+        fig = plt.figure(figsize=(15, 7.5) if panel["kind"] == "2d" else (10, 10))
         ax = fig.add_subplot(projection="3d") if panel["kind"] == "3d" else fig.add_subplot()
         figs.append(fig)
         axes.append(ax)
