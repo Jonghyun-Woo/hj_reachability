@@ -2,10 +2,10 @@
 mat_path: hj_reachability/systems/trim_table_Poly_ConcatVer4p0.mat
 
 hj_analysis_config:
-  axis: lon             # lon or lat
-  mode: brt             # brs / frs / brt / frt
+  axis: lat             # lon or lat
+  mode: frt             # brs / frs / brt / frt
   accuracy: very_high   # low / medium / high / very_high
-  time: 1.5             # horizon (s); integration direction follows the mode / lon: 1.5s, lat: 1.0s
+  time: 1.0             # horizon (s); integration direction follows the mode / lon: 1.5s, lat: 1.0s
   uh_idx_start: 1       # uh_idx 1..28 <-> trim airspeed UH (ft/s); Config.u_idx_range in helperOC
   uh_idx_end: 20
   wh_idx: 3             # wh_idx 1..3 <-> trim vertical speed WH = [-7.5, 0, 11.67] (ft/s)
@@ -40,29 +40,29 @@ longitudinal:
   target_max_theta: 0.05
 
   grid_min_u: -35.0     # (ft/s)
-  grid_min_w: -52.5     # (ft/s)
-  grid_min_q: -1.55     # (rad/s)
+  grid_min_w: -50.0     # (ft/s)
+  grid_min_q: -2.0     # (rad/s)
   grid_min_theta: -1.35 # (rad)
 
   grid_max_u: 35.0      # (ft/s)
-  grid_max_w: 33.75     # (ft/s)
-  grid_max_q: 1.55      # (rad/s)
+  grid_max_w: 50.0     # (ft/s)
+  grid_max_q: 2.0      # (rad/s)
   grid_max_theta: 1.35  # (rad)
 
   grid_number_u: 71     # dx=1.000 ft/s
-  grid_number_w: 111    # dx=0.750 ft/s
+  grid_number_w: 101    # dx=0.750 ft/s
   grid_number_q: 73     # dx=0.0431 rad/s
   grid_number_theta: 63 # dx=0.0435 rad
 
   # Input perturbation limits about trim (+-Delta), from GUAM_Config:
-  # Delta_lift = 300 RPM, Delta_push = 500 RPM, Delta_surf = 15 deg
-  input_min_Pi: -31.4159        # lift rotor speed (rad/s)
-  input_min_Pi_p: -52.3598      # pusher rotor speed (rad/s)
+  # Delta_lift = 120 RPM, Delta_push = 500 RPM, Delta_surf = 15 deg
+  input_min_Pi: -12.5664        # lift rotor speed (rad/s)
+  input_min_Pi_p: -31.4159      # pusher rotor speed (rad/s)
   input_min_delta_e: -0.2618  # elevator (rad)
   input_min_delta_f: -0.2618  # flap (rad)
 
-  input_max_Pi: 31.4159
-  input_max_Pi_p: 52.3598
+  input_max_Pi: 12.5664
+  input_max_Pi_p: 31.4159
   input_max_delta_e: 0.2618
   input_max_delta_f: 0.2618
 
@@ -83,17 +83,17 @@ lateral:
 
   # Grid settings (Config.lat_grid_max / lat_grid_num in helperOC)
   grid_min_v: -25.0
-  grid_min_p: -8.0
+  grid_min_p: -7.0
   grid_min_r: -0.25
   grid_min_phi: -3.0
 
   grid_max_v: 25.0
-  grid_max_p: 8.0
+  grid_max_p: 7.0
   grid_max_r: 0.25
   grid_max_phi: 3.0
 
   grid_number_v: 51     # (ft/s)
-  grid_number_p: 371    # (rad/s)
+  grid_number_p: 341    # (rad/s)
   grid_number_r: 15     # (rad/s)
   grid_number_phi: 139  # (rad)
   

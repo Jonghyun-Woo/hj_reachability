@@ -64,8 +64,10 @@ else:
 
 # Tube modes restrict the Hamiltonian, equivalent to 'minVOverTime' in helperOC.
 solver_kwargs = {}
-if mode in ("brt", "frt"):
+if mode in ("brt"):
     solver_kwargs["hamiltonian_postprocessor"] = hj.solver.backwards_reachable_tube
+if mode in ("frt"):
+    solver_kwargs["hamiltonian_postprocessor"] = hj.solver.forwards_reachable_tube
 solver_settings = hj.SolverSettings.with_accuracy(hj_cfg["accuracy"], **solver_kwargs)
 
 time = 0.
@@ -75,10 +77,6 @@ target_time = time_sign * hj_cfg["time"]
 # matching the plotDims used in GUAM_HJIR.m: lon -> (u, w), lat -> (r, phi).
 plot_dims = (0, 1) if axis == "lon" else (2, 3)
 
-# GUAM wind/gust disturbance bounds per uh_idx trim point (column j <-> uh_idx
-# j+1), from disturbance_lb_ub_10mps.mat. Rows are body axes: dF (ft/s^2) ->
-# [ax, ay, az], dM (rad/s^2) -> [roll, pitch, yaw]. Each state is driven by the
-# body force/moment acting on it; the attitude states (theta/phi) have none.
 dist_mat = scipy.io.loadmat(REPO_ROOT / "hj_reachability" / "systems" / "guam_disturbance_lb_ub_10mps.mat")
 dist_source = {
     "lon": (("dF", 0), ("dF", 2), ("dM", 1), None),  # u, w, q, theta
@@ -87,7 +85,6 @@ dist_source = {
 
 wh_idx = hj_cfg["wh_idx"]
 for uh_idx in range(hj_cfg["uh_idx_start"], hj_cfg["uh_idx_end"] + 1):
-    # uh_idx = 20
     col = uh_idx - 1
     dist_lb = [0. if src is None else dist_mat[f"min_{src[0]}"][src[1], col] for src in dist_source]
     dist_ub = [0. if src is None else dist_mat[f"max_{src[0]}"][src[1], col] for src in dist_source]

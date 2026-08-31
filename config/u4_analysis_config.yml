@@ -48,7 +48,7 @@ longitudinal:
   grid_max_theta: 1.75   # (rad)
 
   grid_number_u: 41
-  grid_number_w: 155
+  grid_number_w: 141
   grid_number_q: 101
   grid_number_theta: 61
 
@@ -66,14 +66,14 @@ longitudinal:
   # dx/dt (see U4Linear.disturbance_jacobian). All 0 means no disturbance.
   dist:
     u:
-      min: -0.8    # (m/s^2)
-      max: 0.8
+      min: 0.0    # (m/s^2)
+      max: 0.0
     w:
-      min: -0.8    # (m/s^2)
-      max: 0.8
+      min: 0.0    # (m/s^2)
+      max: 0.0
     q:
-      min: -1.3    # (rad/s^2)
-      max: 1.3
+      min: 0.0    # (rad/s^2)
+      max: 0.0
     theta:
       min: 0.0     # (rad/s)
       max: 0.0

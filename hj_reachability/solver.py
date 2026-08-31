@@ -14,7 +14,8 @@ from typing import Callable, Text
 
 # Hamiltonian postprocessors.
 identity = lambda *x: x[-1]  # Returns the last argument so that this may also be used as a value postprocessor.
-backwards_reachable_tube = lambda x: jnp.minimum(x, 0)
+backwards_reachable_tube    = lambda x: jnp.minimum(x, 0)
+forwards_reachable_tube     = lambda x: jnp.maximum(x, 0)
 
 # Value postprocessors.
 static_obstacle = lambda obstacle: (lambda t, v: jnp.maximum(v, obstacle))

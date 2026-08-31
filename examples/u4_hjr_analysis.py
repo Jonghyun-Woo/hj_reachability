@@ -64,8 +64,10 @@ else:
 
 # Tube modes restrict the Hamiltonian, equivalent to 'minVOverTime' in helperOC.
 solver_kwargs = {}
-if mode in ("brt", "frt"):
+if mode in ("brt"):
     solver_kwargs["hamiltonian_postprocessor"] = hj.solver.backwards_reachable_tube
+if mode in ("frt"):
+    solver_kwargs["hamiltonian_postprocessor"] = hj.solver.forwards_reachable_tube
 solver_settings = hj.SolverSettings.with_accuracy(hj_cfg["accuracy"], **solver_kwargs)
 
 time = 0.
