@@ -9,6 +9,7 @@ hj_analysis_config:
   time: 0.5             # horizon (s); integration direction follows the mode / lon: 0.5s
   trim_idx_start: 1     # trim_idx 1..19 <-> tilt angle 0:5:90 (deg)
   trim_idx_end: 19
+  # quadfit_path: hj_reachability/systems/u4_disturbance_quadfit.mat  # uncomment to use state-dependent disturbance
 
 # Physical (absolute) actuator limits, keyed by actuator type
 # (thr: EDF throttle %, ail: aileron, rv: ruddervator L/R, tilt: EDF tilt)

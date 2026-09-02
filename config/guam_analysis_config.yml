@@ -42,33 +42,33 @@ longitudinal:
   target_max_q: 0.05
   target_max_theta: 0.05
 
-  grid_min_u: -30.0     # (ft/s)
-  grid_min_w: -40.0     # (ft/s)
-  grid_min_q: -1.8      # (rad/s)
-  grid_min_theta: -1.35 # (rad)
+  grid_min_u: -22.9659   # -7 m/s
+  grid_min_w: -32.8084   # -10 m/s
+  grid_min_q: -1.2217    # -70 deg/s
+  grid_min_theta: -0.5236 # -30 deg
 
-  grid_max_u: 30.0      # (ft/s)
-  grid_max_w: 40.0      # (ft/s)
-  grid_max_q: 1.8       # (rad/s)
-  grid_max_theta: 1.35  # (rad)
+  grid_max_u: 22.9659    # +7 m/s
+  grid_max_w: 32.8084    # +10 m/s
+  grid_max_q: 1.2217     # +70 deg/s
+  grid_max_theta: 0.5236  # +30 deg
 
-  grid_number_u: 61     # dx=1.000 ft/s
-  grid_number_w: 81     # dx=1.000 ft/s
-  grid_number_q: 73     # dx=0.0500 rad/s
-  grid_number_theta: 63 # dx=0.0435 rad
+  grid_number_u: 47      # dx ~1.0 ft/s
+  grid_number_w: 67      # dx ~1.0 ft/s
+  grid_number_q: 49      # dx ~0.051 rad/s
+  grid_number_theta: 53  # dx ~0.020 rad
 
-  # Input perturbation limits about trim (+-Delta), from GUAM_Config:
-  # Delta_lift capped at 100 RPM (aero validity: 120 RPM trips the aero-DB prop-speed limit / frozen forces at UH6-8)
+  # Delta_lift capped at 110 RPM
+  # Delta_push capped at 300 RPM
   # Delta_push/surf unchanged (no trip).
-  input_min_Pi: -10.472         # lift rotor speed (rad/s)
+  input_min_Pi: -11.5192         # lift rotor speed (rad/s)
   input_min_Pi_p: -31.4159      # pusher rotor speed (rad/s)
-  input_min_delta_e: -0.1745    # elevator (rad)
-  input_min_delta_f: -0.1745    # flap (rad)
+  input_min_delta_e: -0.2618    # elevator (rad)
+  input_min_delta_f: -0.2618    # flap (rad)
 
-  input_max_Pi: 10.472
+  input_max_Pi: 11.5192
   input_max_Pi_p: 31.4159
-  input_max_delta_e: 0.1745
-  input_max_delta_f: 0.1745
+  input_max_delta_e: 0.2618
+  input_max_delta_f: 0.2618
 
   # Additive per-state disturbance magnitude (Config.lon_dMax)
   dist_max: 0.0
@@ -85,33 +85,30 @@ lateral:
   target_max_r: 0.05    # (rad/s)
   target_max_phi: 0.05  # (rad)
 
-  # Grid sized to ~1.5x the measured BRT tube extent per state. v shrunk (tube
-  # used only 25-50% of the +-13.5 grid); p/r/phi kept (tube fills 20-97% / 50-80%
-  # / 19-70%, p nearly full at 97% so not shrunk).
-  grid_min_v: -10.0     # (ft/s)  was -13.5; tube <=6.75 ft/s
-  grid_min_p: -3.4      # (rad/s) kept
-  grid_min_r: -0.15     # (rad/s) kept
-  grid_min_phi: -1.3    # (rad)   kept
+  grid_min_v: -22.9659   # -7 m/s
+  grid_min_p: -1.2217    # -70 deg/s
+  grid_min_r: -1.2217    # -70 deg/s
+  grid_min_phi: -0.5236  # -30 deg
 
-  grid_max_v: 10.0      # (ft/s)
-  grid_max_p: 3.4       # (rad/s)
-  grid_max_r: 0.15      # (rad/s)
-  grid_max_phi: 1.3     # (rad)
+  grid_max_v: 22.9659    # +7 m/s
+  grid_max_p: 1.2217     # +70 deg/s
+  grid_max_r: 1.2217     # +70 deg/s
+  grid_max_phi: 0.5236   # +30 deg
 
-  grid_number_v: 41     # dx=0.500 ft/s
-  grid_number_p: 201    # dx=0.0340 rad/s
-  grid_number_r: 21     # dx=0.0150 rad/s
-  grid_number_phi: 139  # dx=0.0188 rad
+  grid_number_v: 47      # dx ~1.0 ft/s
+  grid_number_p: 73      # dx ~0.034 rad/s
+  grid_number_r: 73      # dx ~0.034 rad/s
+  grid_number_phi: 53    # dx ~0.020 rad
 
   # Input perturbation limits about trim (+-Delta), from GUAM_Config:
-  # Delta_lift capped at 100 RPM (aero validity). Delta_surf 10 deg (no trip).
-  input_min_Pi: -10.472      # lift rotor speed (rad/s) = -100 RPM
-  input_min_delta_a: -0.1745 # aileron (rad) = -10 deg
-  input_min_delta_r: -0.1745 # rudder (rad) = -10 deg
+  # Delta_lift capped at 110 RPM (aero validity). Delta_surf 15 deg (no trip).
+  input_min_Pi: -11.5192      # lift rotor speed (rad/s) = -100 RPM
+  input_min_delta_a: -0.2618 # aileron (rad) = -10 deg
+  input_min_delta_r: -0.2618 # rudder (rad) = -10 deg
 
-  input_max_Pi: 10.472
-  input_max_delta_a: 0.1745
-  input_max_delta_r: 0.1745
+  input_max_Pi: 11.5192
+  input_max_delta_a: 0.2618
+  input_max_delta_r: 0.2618
 
   # Additive per-state disturbance magnitude (Config.lat_dMax)
   dist_max: 0.0
