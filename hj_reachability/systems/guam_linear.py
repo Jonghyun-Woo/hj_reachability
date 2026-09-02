@@ -19,6 +19,8 @@ point, i.e. the grid state is `dx = x - x_trim` and the control is
     d(dx)/dt = A @ dx + B @ du + d
 """
 
+import os
+
 import jax.numpy as jnp
 import numpy as np
 import scipy.io
@@ -141,13 +143,24 @@ class GuamLinear(dynamics.ControlAndDisturbanceAffineDynamics):
         self.ctrl_lb, self.ctrl_ub = self.control_bound(cfg)
         if control_space is None:
             control_space = sets.Box(self.ctrl_lb, self.ctrl_ub)
+
+        self._beta = None
         if disturbance_space is None:
-            # Additive per-state disturbance |d_i| <= dist_max, matching
-            # `GUAM_LON/optDstb.m` in helperOC; dist_max = 0 means no disturbance.
-            dist_max = jnp.broadcast_to(jnp.asarray(cfg[spec["cfg_key"]]["dist_max"], dtype=jnp.float32),
-                                        (self.A.shape[0],))
-            disturbance_space = sets.Box(-dist_max, dist_max)
-            
+            quadfit_path = cfg.get("quadfit_mat")
+            if quadfit_path and os.path.isfile(quadfit_path):
+                qf = scipy.io.loadmat(quadfit_path)
+                # beta_{axis}: (15, 4, 28); pick column for this uh (0-based)
+                self._beta = jnp.asarray(qf[f"beta_{axis}"][:, :, i], dtype=jnp.float32)
+                self._half = jnp.asarray(qf[f"half_{axis}"].ravel(), dtype=jnp.float32)
+                disturbance_space = sets.Box(-jnp.ones(4, dtype=jnp.float32),
+                                             jnp.ones(4, dtype=jnp.float32))
+            else:
+                # Additive per-state disturbance |d_i| <= dist_max; 0 means no disturbance.
+                dist_max = jnp.broadcast_to(
+                    jnp.asarray(cfg[spec["cfg_key"]]["dist_max"], dtype=jnp.float32),
+                    (self.A.shape[0],))
+                disturbance_space = sets.Box(-dist_max, dist_max)
+
         super().__init__(control_mode, disturbance_mode, control_space, disturbance_space)
 
     def control_bound(self, cfg):
@@ -181,6 +194,12 @@ class GuamLinear(dynamics.ControlAndDisturbanceAffineDynamics):
         return self.B
 
     def disturbance_jacobian(self, state, time):
-        # The disturbance enters each state equation directly (dx/dt += d),
-        # matching `GUAM_LON/dynamics.m` in helperOC.
+        if self._beta is not None:
+            z = state / self._half
+            phi = jnp.array([1., z[0], z[1], z[2], z[3],
+                             z[0]**2, z[1]**2, z[2]**2, z[3]**2,
+                             z[0]*z[1], z[0]*z[2], z[0]*z[3],
+                             z[1]*z[2], z[1]*z[3], z[2]*z[3]])
+            e_max = jnp.maximum(phi @ self._beta, 0.)
+            return jnp.diag(e_max)
         return jnp.eye(self.A.shape[0])

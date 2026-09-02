@@ -15,7 +15,6 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 from pathlib import Path
-import scipy.io
 import yaml
 
 import hj_reachability as hj
@@ -29,6 +28,8 @@ config_path = REPO_ROOT / "config" / "guam_analysis_config.yml"
 with open(config_path) as config_file:
     cfg = yaml.safe_load(config_file)
 cfg["mat_path"] = str(REPO_ROOT / cfg["mat_path"])
+if "quadfit_mat" in cfg:
+    cfg["quadfit_mat"] = str(REPO_ROOT / cfg["quadfit_mat"])
 
 hj_cfg = cfg["hj_analysis_config"]
 axis = hj_cfg["axis"]
@@ -77,21 +78,9 @@ target_time = time_sign * hj_cfg["time"]
 # matching the plotDims used in GUAM_HJIR.m: lon -> (u, w), lat -> (r, phi).
 plot_dims = (0, 1) if axis == "lon" else (2, 3)
 
-dist_mat = scipy.io.loadmat(REPO_ROOT / "hj_reachability" / "systems" / "guam_disturbance_lb_ub_10mps.mat")
-dist_source = {
-    "lon": (("dF", 0), ("dF", 2), ("dM", 1), None),  # u, w, q, theta
-    "lat": (("dF", 1), ("dM", 0), ("dM", 2), None),  # v, p, r, phi
-}[axis]
-
 wh_idx = hj_cfg["wh_idx"]
 for uh_idx in range(hj_cfg["uh_idx_start"], hj_cfg["uh_idx_end"] + 1):
-    col = uh_idx - 1
-    dist_lb = [0. if src is None else dist_mat[f"min_{src[0]}"][src[1], col] for src in dist_source]
-    dist_ub = [0. if src is None else dist_mat[f"max_{src[0]}"][src[1], col] for src in dist_source]
-    disturbance_space = hj.sets.Box(jnp.asarray(dist_lb, dtype=jnp.float32),
-                                    jnp.asarray(dist_ub, dtype=jnp.float32))
-    guam_dynamics = hj.systems.GuamLinear(cfg, uh_idx, wh_idx, axis, control_mode, disturbance_mode,
-                                            disturbance_space=disturbance_space)
+    guam_dynamics = hj.systems.GuamLinear(cfg, uh_idx, wh_idx, axis, control_mode, disturbance_mode)
 
     target_values = hj.step(solver_settings, guam_dynamics, grid, time, values, target_time)
 
