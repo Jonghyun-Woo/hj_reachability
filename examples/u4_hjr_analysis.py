@@ -5,6 +5,7 @@ set/tube of the linearized lon/lat dynamics in deviation coordinates and
 saves the final value function to `examples/u4_outputs/`.
 """
 
+import itertools
 import os
 
 os.environ.setdefault("XLA_PYTHON_CLIENT_PREALLOCATE", "false")
@@ -73,10 +74,6 @@ solver_settings = hj.SolverSettings.with_accuracy(hj_cfg["accuracy"], **solver_k
 time = 0.
 target_time = time_sign * hj_cfg["time"]
 
-# 2D projection for visualization (remaining dims sliced at the grid center),
-# matching the plotDims used in U4_HJIR.m.
-plot_dims = (0, 1) if axis == "lon" else (2, 3)
-
 for trim_idx in range(hj_cfg["trim_idx_start"], hj_cfg["trim_idx_end"] + 1):
     u4_dynamics = hj.systems.U4Linear(cfg, trim_idx, axis, control_mode, disturbance_mode)
 
@@ -85,23 +82,26 @@ for trim_idx in range(hj_cfg["trim_idx_start"], hj_cfg["trim_idx_end"] + 1):
     tilt_deg = u4_dynamics.tilt_deg
     stem = f"U4_{axis.upper()}_{mode.upper()}_TILT{tilt_deg}"
     np.save(os.path.join(OUTPUT_DIR, f"{stem}.npy"), np.asarray(target_values))
-    print(f"Reachability analysis for U4_{axis.upper()} (tilt {tilt_deg} deg) completed.")
-    print(f"Results saved to {os.path.join(OUTPUT_DIR, stem + '.npy')}")
 
-    slicer = tuple(slice(None) if dim in plot_dims else n // 2 for dim, n in enumerate(grid_shape))
-    x_dim, y_dim = plot_dims
-    plt.figure(figsize=(8, 6))
-    plt.contourf(grid.coordinate_vectors[x_dim], grid.coordinate_vectors[y_dim],
-                    np.asarray(target_values[slicer]).T)
-    plt.imshow(np.asarray(target_values[slicer]).T, extent=[grid_lo[0], grid_hi[0], grid_lo[1], grid_hi[1],],
-            origin='lower', aspect='auto', cmap='viridis')
-    plt.pcolormesh(grid.coordinate_vectors[x_dim], grid.coordinate_vectors[y_dim],
-                    np.asarray(target_values[slicer]).T, cmap='viridis', shading='gouraud', vmin=np.asarray(target_values[slicer]).T.min(), vmax=0)
-    plt.colorbar()
-    plt.contour(grid.coordinate_vectors[x_dim], grid.coordinate_vectors[y_dim],
-                np.asarray(target_values[slicer]).T, levels=[0], colors="black", linewidths=2)
-    plt.xlabel(state_names[x_dim])
-    plt.ylabel(state_names[y_dim])
-    plt.title(f"U4 {axis.upper()} {mode.upper()}, tilt {tilt_deg} deg")
-    plt.savefig(os.path.join(OUTPUT_DIR, f"{stem}.png"), dpi=150)
-    plt.close()
+    pairs = list(itertools.combinations(range(len(state_names)), 2))
+    fig, axes = plt.subplots(2, 3, figsize=(18, 10))
+    for (x_dim, y_dim), ax in zip(pairs, axes.ravel()):
+        slicer = tuple(slice(None) if dim in (x_dim, y_dim) else n // 2
+                       for dim, n in enumerate(grid_shape))
+        slice_2d = np.asarray(target_values[slicer]).T
+        xs = grid.coordinate_vectors[x_dim]
+        ys = grid.coordinate_vectors[y_dim]
+        mesh = ax.pcolormesh(xs, ys, slice_2d, cmap="viridis", shading="gouraud",
+                             vmin=slice_2d.min(), vmax=0)
+        fig.colorbar(mesh, ax=ax)
+        ax.contour(xs, ys, slice_2d, levels=[0], colors="black", linewidths=2)
+        ax.set_xlabel(state_names[x_dim])
+        ax.set_ylabel(state_names[y_dim])
+        ax.set_title(f"{state_names[x_dim]} - {state_names[y_dim]}")
+    fig.suptitle(stem, fontsize=14)
+    fig.tight_layout()
+    fig.savefig(os.path.join(OUTPUT_DIR, f"{stem}_pairs.png"), dpi=150)
+    plt.close(fig)
+
+    print(f"Reachability analysis for U4_{axis.upper()} (tilt {tilt_deg} deg) completed.")
+    print(f"Results saved to {os.path.join(OUTPUT_DIR, stem + '.npy')} and {stem + '_pairs.png'}")

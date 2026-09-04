@@ -149,7 +149,7 @@ class GuamLinear(dynamics.ControlAndDisturbanceAffineDynamics):
             quadfit_path = cfg.get("quadfit_mat")
             if quadfit_path and os.path.isfile(quadfit_path):
                 qf = scipy.io.loadmat(quadfit_path)
-                # beta_{axis}: (15, 4, 28); pick column for this uh (0-based)
+                # beta_{axis}: (15, 4, n_UH); pick slice for this uh (0-based)
                 self._beta = jnp.asarray(qf[f"beta_{axis}"][:, :, i], dtype=jnp.float32)
                 self._half = jnp.asarray(qf[f"half_{axis}"].ravel(), dtype=jnp.float32)
                 disturbance_space = sets.Box(-jnp.ones(4, dtype=jnp.float32),

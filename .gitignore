@@ -2,9 +2,11 @@
 .vscode
 *.github
 CLAUDE.local.md
+CLAUDE.md
 examples/outputs/
 examples/u4_outputs/
 examples/guam_outputs/
+examples/guam_timestack/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
