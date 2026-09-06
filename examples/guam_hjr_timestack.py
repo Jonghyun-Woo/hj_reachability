@@ -6,11 +6,9 @@ before the next step). Output layout under examples/guam_timestack/:
 
   guam_analysis_config.yml          -- copy for MATLAB brt_setup(read_yml(...))
   {AXIS}_NPY/
-    {stem}_stack.mat  Vslices : 1xK cell of float32 (n1, n2, n3, n4) value grids
-                      taus    : 1xK time-to-go (s), aligned with Vslices
-                      (+ grid_min/max/N, grid_axes, state_names, mode, axis, uh, wh)
-                      Vslices{1}   = tau=0 (most evolved BRT)
-                      Vslices{K}   = tau=T (initial set)
+    {stem}_stack.npy  float32 (K, n1, n2, n3, n4)
+                      index 0 = tau=0 (most evolved BRT)
+                      index K-1 = tau=T (initial set)
     {stem}.png        6-subplot all-pairs visualization of the tau=0 slice
 
 The reversed time ordering matches MATLAB value_grad_tv, which expects
@@ -30,19 +28,10 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 from pathlib import Path
-import scipy.io
 import yaml
 
 import hj_reachability as hj
 from hj_reachability.systems.guam_linear import AXIS_SPEC
-
-
-def to_cell(items):
-    """Pack a Python sequence into a 1xN object array so it becomes a MATLAB cell."""
-    cell = np.empty((len(items),), dtype=object)
-    for i, item in enumerate(items):
-        cell[i] = item
-    return cell
 
 # Number of time intervals; total slices = N_STEPS + 1.
 # Memory per trim point (lon): (N_STEPS+1) * 47*67*49*53 * 4 B
@@ -114,24 +103,10 @@ for uh_idx in range(hj_cfg["uh_idx_start"], hj_cfg["uh_idx_end"] + 1):
     print()
 
     # Reverse so index 0 = tau=0 (most evolved) to match MATLAB Vslices{1}=tau=0.
-    vslices = slices[::-1]  # K x (n1, n2, n3, n4)
-    taus = (abs(hj_cfg["time"]) - np.abs(times))[::-1]  # time-to-go (s); taus[0]=0 aligns with Vslices{1}
+    stack = np.stack(slices[::-1])  # (K, n1, n2, n3, n4)
 
     stem = f"GUAM_{axis.upper()}_{mode.upper()}_UH{uh_idx}_WH{wh_idx}"
-    scipy.io.savemat(
-        npy_dir / f"{stem}_stack.mat", {
-            "Vslices": to_cell(vslices),
-            "taus": np.asarray(taus, dtype=np.float64),
-            "grid_min": np.asarray(grid_lo, dtype=np.float64),
-            "grid_max": np.asarray(grid_hi, dtype=np.float64),
-            "grid_N": np.asarray(grid_shape, dtype=np.float64),
-            "grid_axes": to_cell([np.asarray(cv, dtype=np.float64) for cv in grid.coordinate_vectors]),
-            "state_names": to_cell(list(state_names)),
-            "mode": mode,
-            "axis": axis,
-            "uh": float(guam_dynamics.uh),
-            "wh": float(guam_dynamics.wh),
-        })
+    np.save(npy_dir / f"{stem}_stack.npy", stack)
 
     final_values = slices[-1]   # tau=0, most evolved
     pairs = list(itertools.combinations(range(len(state_names)), 2))
@@ -154,5 +129,5 @@ for uh_idx in range(hj_cfg["uh_idx_start"], hj_cfg["uh_idx_end"] + 1):
     fig.savefig(npy_dir / f"{stem}.png", dpi=150)
     plt.close(fig)
 
-    print(f"GUAM_{axis.upper()} UH{uh_idx} WH{wh_idx}: {len(vslices)} slices "
-          f"{vslices[0].shape} saved to {npy_dir / (stem + '_stack.mat')}")
+    print(f"GUAM_{axis.upper()} UH{uh_idx} WH{wh_idx}: stack {stack.shape} saved to "
+          f"{npy_dir / (stem + '_stack.npy')}")
