@@ -45,10 +45,10 @@ PANELS = [
      "xyz": ("x", "y"), "labels": ("u (m/s)", "w (m/s)")},
     {"title": "Lon: q vs u vs theta", "kind": "3d", "axis": "lon", "dims": (2, 3), "file": "q_u_theta",
      "xyz": ("x", "h", "y"), "labels": ("q (deg/s)", "u_trim (m/s)", "theta (deg)")},
-    {"title": "Lat: v vs u vs phi", "kind": "3d", "axis": "lat", "dims": (0, 3), "file": "v_u_phi",
-     "xyz": ("x", "h", "y"), "labels": ("v (m/s)", "u_trim (m/s)", "phi (deg)")},
-    {"title": "Lat: p vs u vs r", "kind": "3d", "axis": "lat", "dims": (1, 2), "file": "p_u_r",
-     "xyz": ("x", "h", "y"), "labels": ("p (deg/s)", "u_trim (m/s)", "r (deg/s)")},
+    {"title": "Lat: v vs u vs p", "kind": "3d", "axis": "lat", "dims": (0, 1), "file": "v_u_p",
+     "xyz": ("x", "h", "y"), "labels": ("v (m/s)", "u_trim (m/s)", "p (deg/s)")},
+    {"title": "Lat: r vs u vs phi", "kind": "3d", "axis": "lat", "dims": (2, 3), "file": "r_u_phi",
+     "xyz": ("x", "h", "y"), "labels": ("r (deg/s)", "u_trim (m/s)", "phi (deg)")},
 ]
 
 FIGURE_CFG = [{"font_size": 14}]
