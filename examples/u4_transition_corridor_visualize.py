@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
 from mpl_toolkits.mplot3d.art3d import Line3DCollection
 import numpy as np
+import scipy.io
 import yaml
 
 import hj_reachability as hj
@@ -104,12 +105,12 @@ def main():
 
     for trim_idx in TRIM_RANGE:
         tilt_deg = (trim_idx - 1) * 5
-        npy_path = OUTPUT_DIR / f"U4_LON_{MODE.upper()}_TILT{tilt_deg}.npy"
-        if not npy_path.exists():
-            print(f"skipping tilt {tilt_deg}: missing {npy_path.name}")
+        mat_path = OUTPUT_DIR / f"U4_LON_{MODE.upper()}_TILT{tilt_deg}.mat"
+        if not mat_path.exists():
+            print(f"skipping tilt {tilt_deg}: missing {mat_path.name}")
             continue
 
-        values = np.load(npy_path)
+        values = scipy.io.loadmat(mat_path)["values"]
         # Lon trim state [u, w, q, theta]; u_trim (x_trim[0], m/s) is the corridor height.
         x_trim = np.asarray(trim[trim_idx - 1].squeeze()[x_state_idx])
         u_trim_mps = float(x_trim[0])

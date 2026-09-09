@@ -14,6 +14,7 @@ from matplotlib.patches import Rectangle
 import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+import scipy.io
 import yaml
 
 import hj_reachability as hj
@@ -76,16 +77,16 @@ def parse_tube(stem):
     raise ValueError(f"cannot determine tube type (BRT/FRT) from stem {stem!r}")
 
 
-def visualize_2d(npy_path):
+def visualize_2d(mat_path):
     """Draws all 6 state-pair tube contours of one value function into one figure."""
-    stem = npy_path.stem
+    stem = mat_path.stem
     axis = parse_axis(stem)
     color, legend = parse_tube(stem)
     grid, grid_shape, names = build_grid(axis)
     scale = AXIS_DISPLAY[axis]["scale"]
     labels = AXIS_DISPLAY[axis]["labels"]
     tgt_lo, tgt_hi = target_corners(axis)
-    values = np.load(npy_path)
+    values = scipy.io.loadmat(mat_path)["values"]
 
     pairs = list(itertools.combinations(range(len(names)), 2))
     fig, axes = plt.subplots(2, 3, figsize=(18, 10))
@@ -130,16 +131,16 @@ def _box_edges(lo, hi):
     return xs, ys, zs
 
 
-def visualize_3d(npy_path):
+def visualize_3d(mat_path):
     """Draws all 4 state-triple tube isosurfaces of one value function into one HTML."""
-    stem = npy_path.stem
+    stem = mat_path.stem
     axis = parse_axis(stem)
     color, legend = parse_tube(stem)
     grid, grid_shape, names = build_grid(axis)
     scale = AXIS_DISPLAY[axis]["scale"]
     labels = AXIS_DISPLAY[axis]["labels"]
     tgt_lo, tgt_hi = target_corners(axis)
-    values = np.load(npy_path)
+    values = scipy.io.loadmat(mat_path)["values"]
 
     triples = list(itertools.combinations(range(len(names)), 3))
     fig = make_subplots(rows=2, cols=2, specs=[[{"type": "scene"}] * 2] * 2,
@@ -182,9 +183,9 @@ if __name__ == "__main__":
                         help="projection mode: '2d' (state pairs) or '3d' (state triples)")
     args = parser.parse_args()
 
-    npy_files = sorted(OUTPUT_DIR.glob("*.npy"))
-    if not npy_files:
-        raise SystemExit(f"no .npy files found in {OUTPUT_DIR}")
+    mat_files = sorted(OUTPUT_DIR.glob("*.mat"))
+    if not mat_files:
+        raise SystemExit(f"no .mat files found in {OUTPUT_DIR}")
     render = visualize_2d if args.proj == "2d" else visualize_3d
-    for npy_path in npy_files:
-        render(npy_path)
+    for mat_path in mat_files:
+        render(mat_path)

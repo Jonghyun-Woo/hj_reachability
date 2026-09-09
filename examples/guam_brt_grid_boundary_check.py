@@ -6,7 +6,7 @@ a grid boundary face, the reachable set fills the grid up to that edge and the
 true zero-contour lies *outside* the grid, i.e. the grid is too small along
 that axis.
 
-For every `.npy` in `examples/guam_outputs/` this reports, per state axis and
+For every `.mat` in `examples/guam_outputs/` this reports, per state axis and
 per face (low/high), the minimum boundary value and how many boundary cells are
 inside the tube (value <= 0).
 """
@@ -18,6 +18,7 @@ os.environ.setdefault("XLA_PYTHON_CLIENT_PREALLOCATE", "false")
 from pathlib import Path
 
 import numpy as np
+import scipy.io
 import yaml
 
 from hj_reachability.systems.guam_linear import AXIS_SPEC
@@ -50,11 +51,11 @@ def parse_axis(stem):
     raise ValueError(f"cannot determine axis from filename stem {stem!r}")
 
 
-def check(npy_path):
-    stem = npy_path.stem
+def check(mat_path):
+    stem = mat_path.stem
     axis = parse_axis(stem)
     names, coords = axis_grid(axis)
-    values = np.load(npy_path)
+    values = scipy.io.loadmat(mat_path)["values"]
 
     if values.ndim != len(names):
         raise ValueError(f"{stem}: value ndim {values.ndim} != {len(names)} state dims")
@@ -86,8 +87,8 @@ def check(npy_path):
 
 
 if __name__ == "__main__":
-    npy_files = sorted(OUTPUT_DIR.glob("*.npy"))
-    if not npy_files:
-        raise SystemExit(f"no .npy files found in {OUTPUT_DIR}")
-    for npy_path in npy_files:
-        check(npy_path)
+    mat_files = sorted(OUTPUT_DIR.glob("*.mat"))
+    if not mat_files:
+        raise SystemExit(f"no .mat files found in {OUTPUT_DIR}")
+    for mat_path in mat_files:
+        check(mat_path)

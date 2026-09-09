@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
 from mpl_toolkits.mplot3d.art3d import Line3DCollection
 import numpy as np
+import scipy.io
 import yaml
 
 import hj_reachability as hj
@@ -115,14 +116,14 @@ def main():
 
         data = {}  # axis -> (values, grid, grid_shape, x_trim, scale)
         for axis in ("lon", "lat"):
-            npy_path = OUTPUT_DIR / f"GUAM_{axis.upper()}_BRT_UH{uh_idx}_WH{WH_IDX}.npy"
-            if not npy_path.exists():
+            mat_path = OUTPUT_DIR / f"GUAM_{axis.upper()}_BRT_UH{uh_idx}_WH{WH_IDX}.mat"
+            if not mat_path.exists():
                 break
             grid, grid_shape, _ = grids[axis]
             x_trim = np.asarray(trim[TRIM_ROWS[axis], col, WH_IDX - 1])
-            data[axis] = (np.load(npy_path), grid, grid_shape, x_trim, AXIS_SCALE[axis])
+            data[axis] = (scipy.io.loadmat(mat_path)["values"], grid, grid_shape, x_trim, AXIS_SCALE[axis])
         if len(data) < 2:
-            print(f"skipping UH{uh_idx}: missing lon/lat npy")
+            print(f"skipping UH{uh_idx}: missing lon/lat mat")
             continue
 
         for ax, panel in zip(axes, PANELS):
