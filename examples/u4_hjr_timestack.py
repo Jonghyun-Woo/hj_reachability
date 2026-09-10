@@ -1,10 +1,10 @@
-"""GUAM HJ reachability time-stack for Monte-Carlo BRT verification.
+"""U4 HJ reachability time-stack for Monte-Carlo BRT verification.
 
 Produces value-function snapshots at N_STEPS+1 uniform time points by calling
 hj.step() in a Python loop (GPU-memory-safe: each slice is transferred to CPU
-before the next step). Output layout under examples/guam_timestack/:
+before the next step). Output layout under examples/u4_timestack/:
 
-  guam_analysis_config.yml          -- copy for MATLAB brt_setup(read_yml(...))
+  u4_analysis_config.yml            -- copy for MATLAB brt_setup(read_yml(...))
   {AXIS}_NPY/
     {stem}_stack.npy  float32 (K, n1, n2, n3, n4)
                       index 0 = tau=0 (most evolved BRT)
@@ -31,17 +31,15 @@ from pathlib import Path
 import yaml
 
 import hj_reachability as hj
-from hj_reachability.systems.guam_linear import AXIS_SPEC
+from hj_reachability.systems.u4_linear import AXIS_SPEC
 
 # Number of time intervals; total slices = N_STEPS + 1.
-# Memory per trim point (lon): (N_STEPS+1) * 47*67*49*53 * 4 B
-#   N_STEPS=20 -> ~690 MB,  N_STEPS=50 -> ~1.7 GB.
 N_STEPS = 30
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-OUTPUT_DIR = Path(__file__).resolve().parent / "guam_timestack"
+OUTPUT_DIR = Path(__file__).resolve().parent / "u4_timestack"
 
-config_path = REPO_ROOT / "config" / "guam_analysis_config.yml"
+config_path = REPO_ROOT / "config" / "u4_analysis_config.yml"
 with open(config_path) as config_file:
     cfg = yaml.safe_load(config_file)
 cfg["mat_path"] = str(REPO_ROOT / cfg["mat_path"])
@@ -86,17 +84,17 @@ times = np.linspace(0., time_sign * hj_cfg["time"], N_STEPS + 1)
 
 npy_dir = OUTPUT_DIR / f"{axis.upper()}_NPY"
 npy_dir.mkdir(parents=True, exist_ok=True)
-shutil.copy(config_path, OUTPUT_DIR / "guam_analysis_config.yml")
+shutil.copy(config_path, OUTPUT_DIR / "u4_analysis_config.yml")
 
-wh_idx = hj_cfg["wh_idx"]
-for uh_idx in range(hj_cfg["uh_idx_start"], hj_cfg["uh_idx_end"] + 1):
-    guam_dynamics = hj.systems.GuamLinear(cfg, uh_idx, wh_idx, axis, control_mode, disturbance_mode)
+for trim_idx in range(hj_cfg["trim_idx_start"], hj_cfg["trim_idx_end"] + 1):
+    u4_dynamics = hj.systems.U4Linear(cfg, trim_idx, axis, control_mode, disturbance_mode)
+    tilt_deg = u4_dynamics.tilt_deg
 
     # Step through time, transferring each slice to CPU immediately.
     v = values
     slices = [np.asarray(v, dtype=np.float32)]   # index 0 = t=0, tau=T (initial)
     for k in range(N_STEPS):
-        v = hj.step(solver_settings, guam_dynamics, grid, times[k], v, times[k + 1],
+        v = hj.step(solver_settings, u4_dynamics, grid, times[k], v, times[k + 1],
                     progress_bar=False)
         slices.append(np.asarray(v, dtype=np.float32))
         print(f"  step {k + 1}/{N_STEPS} done", end="\r", flush=True)
@@ -105,7 +103,7 @@ for uh_idx in range(hj_cfg["uh_idx_start"], hj_cfg["uh_idx_end"] + 1):
     # Reverse so index 0 = tau=0 (most evolved) to match MATLAB Vslices{1}=tau=0.
     stack = np.stack(slices[::-1])  # (K, n1, n2, n3, n4)
 
-    stem = f"GUAM_{axis.upper()}_{mode.upper()}_UH{uh_idx}_WH{wh_idx}"
+    stem = f"U4_{axis.upper()}_{mode.upper()}_TILT{tilt_deg}"
     np.save(npy_dir / f"{stem}_stack.npy", stack)
 
     final_values = slices[-1]   # tau=0, most evolved
@@ -129,5 +127,5 @@ for uh_idx in range(hj_cfg["uh_idx_start"], hj_cfg["uh_idx_end"] + 1):
     fig.savefig(npy_dir / f"{stem}.png", dpi=150)
     plt.close(fig)
 
-    print(f"GUAM_{axis.upper()} UH{uh_idx} WH{wh_idx}: stack {stack.shape} saved to "
+    print(f"U4_{axis.upper()} TILT{tilt_deg}: stack {stack.shape} saved to "
           f"{npy_dir / (stem + '_stack.npy')}")

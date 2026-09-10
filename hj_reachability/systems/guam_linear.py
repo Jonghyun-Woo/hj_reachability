@@ -19,8 +19,6 @@ point, i.e. the grid state is `dx = x - x_trim` and the control is
     d(dx)/dt = A @ dx + B @ du + d
 """
 
-import os
-
 import jax.numpy as jnp
 import numpy as np
 import scipy.io
@@ -146,20 +144,15 @@ class GuamLinear(dynamics.ControlAndDisturbanceAffineDynamics):
 
         self._beta = None
         if disturbance_space is None:
-            quadfit_path = cfg.get("quadfit_mat")
-            if quadfit_path and os.path.isfile(quadfit_path):
-                qf = scipy.io.loadmat(quadfit_path)
-                # beta_{axis}: (15, 4, n_UH); pick slice for this uh (0-based)
-                self._beta = jnp.asarray(qf[f"beta_{axis}"][:, :, i], dtype=jnp.float32)
-                self._half = jnp.asarray(qf[f"half_{axis}"].ravel(), dtype=jnp.float32)
-                disturbance_space = sets.Box(-jnp.ones(4, dtype=jnp.float32),
-                                             jnp.ones(4, dtype=jnp.float32))
-            else:
-                # Additive per-state disturbance |d_i| <= dist_max; 0 means no disturbance.
-                dist_max = jnp.broadcast_to(
-                    jnp.asarray(cfg[spec["cfg_key"]]["dist_max"], dtype=jnp.float32),
-                    (self.A.shape[0],))
-                disturbance_space = sets.Box(-dist_max, dist_max)
+            # State-dependent model-mismatch disturbance from the quadratic
+            # envelope fit: d in [-1, 1]^4, shaped by diag(e_max(state)) in
+            # disturbance_jacobian. beta_{axis}: (15, 4, n_UH); pick slice for
+            # this uh (0-based).
+            qf = scipy.io.loadmat(cfg["quadfit_mat"])
+            self._beta = jnp.asarray(qf[f"beta_{axis}"][:, :, i], dtype=jnp.float32)
+            self._half = jnp.asarray(qf[f"half_{axis}"].ravel(), dtype=jnp.float32)
+            disturbance_space = sets.Box(-jnp.ones(4, dtype=jnp.float32),
+                                         jnp.ones(4, dtype=jnp.float32))
 
         super().__init__(control_mode, disturbance_mode, control_space, disturbance_space)
 

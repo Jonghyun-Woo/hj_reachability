@@ -16,20 +16,10 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 from pathlib import Path
-import scipy.io
 import yaml
 
 import hj_reachability as hj
 from hj_reachability.systems.guam_linear import AXIS_SPEC
-
-
-def to_cell(items):
-    """Pack a Python sequence into a 1xN object array so it becomes a MATLAB cell."""
-    cell = np.empty((len(items),), dtype=object)
-    for i, item in enumerate(items):
-        cell[i] = item
-    return cell
-
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 OUTPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "guam_outputs")
@@ -96,20 +86,7 @@ for uh_idx in range(hj_cfg["uh_idx_start"], hj_cfg["uh_idx_end"] + 1):
     target_values = hj.step(solver_settings, guam_dynamics, grid, time, values, target_time)
 
     stem = f"GUAM_{axis.upper()}_{mode.upper()}_UH{uh_idx}_WH{wh_idx}"
-    scipy.io.savemat(
-        os.path.join(OUTPUT_DIR, f"{stem}.mat"), {
-            "values": np.asarray(target_values, dtype=np.float32),
-            "grid_min": np.asarray(grid_lo, dtype=np.float64),
-            "grid_max": np.asarray(grid_hi, dtype=np.float64),
-            "grid_N": np.asarray(grid_shape, dtype=np.float64),
-            "grid_axes": to_cell([np.asarray(cv, dtype=np.float64) for cv in grid.coordinate_vectors]),
-            "state_names": to_cell(list(state_names)),
-            "tau": float(abs(target_time)),
-            "mode": mode,
-            "axis": axis,
-            "uh": float(guam_dynamics.uh),
-            "wh": float(guam_dynamics.wh),
-        })
+    np.save(os.path.join(OUTPUT_DIR, f"{stem}.npy"), np.asarray(target_values))
 
     pairs = list(itertools.combinations(range(len(state_names)), 2))
     fig, axes = plt.subplots(2, 3, figsize=(18, 10))
@@ -133,4 +110,4 @@ for uh_idx in range(hj_cfg["uh_idx_start"], hj_cfg["uh_idx_end"] + 1):
 
     print(f"Reachability analysis for GUAM_{axis.upper()} "
             f"(UH {guam_dynamics.uh:.1f} ft/s, WH {guam_dynamics.wh:.1f} ft/s) completed.")
-    print(f"Results saved to {os.path.join(OUTPUT_DIR, stem + '.mat')} and {stem + '.png'}")
+    print(f"Results saved to {os.path.join(OUTPUT_DIR, stem + '.npy')} and {stem + '.png'}")
