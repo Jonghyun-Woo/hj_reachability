@@ -15,6 +15,8 @@ point, i.e. the grid state is `dx = x - x_trim` and the control is
     d(dx)/dt = A @ dx + B @ du + d
 """
 
+import os
+
 import jax.numpy as jnp
 import numpy as np
 import scipy.io
@@ -116,15 +118,32 @@ class U4Linear(dynamics.ControlAndDisturbanceAffineDynamics):
         self.ctrl_lb, self.ctrl_ub = self.control_bound(cfg)
         if control_space is None:
             control_space = sets.Box(self.ctrl_lb, self.ctrl_ub)
+
+        self._beta = None
         if disturbance_space is None:
-            # Additive per-state disturbance d_i in [min, max] added to dx/dt
-            # (see disturbance_jacobian), matching `optDstb` in helperOC; a
-            # min == max == 0 state means no disturbance. Bounds are keyed by
-            # state name under `dist` in the per-axis config section.
+            # Base additive per-state disturbance d_box in [min, max], keyed by
+            # state name under `dist` in the per-axis config section (a
+            # min == max == 0 state means no base disturbance).
             dist_cfg = cfg[spec["cfg_key"]]["dist"]
             dist_lb = jnp.array([dist_cfg[name]["min"] for name in spec["state_names"]], dtype=jnp.float32)
             dist_ub = jnp.array([dist_cfg[name]["max"] for name in spec["state_names"]], dtype=jnp.float32)
-            disturbance_space = sets.Box(dist_lb, dist_ub)
+
+            # If `quadfit_mat` is present and the file exists, a state-dependent
+            # model-mismatch envelope (quadratic fit) acts *in addition* to the
+            # base disturbance: stacked as d = [d_box (4); d_mismatch (4)],
+            # d_mismatch in [-1, 1]^4, shaped by diag(e_max(state)) in
+            # disturbance_jacobian. beta_{axis}: (15, 4, n_trim); slice for this
+            # trim_idx (0-based). Otherwise only the base box disturbance is used.
+            quadfit_mat = cfg.get("quadfit_mat")
+            if quadfit_mat and os.path.exists(quadfit_mat):
+                qf = scipy.io.loadmat(quadfit_mat)
+                self._beta = jnp.asarray(qf[f"beta_{axis}"][:, :, i], dtype=jnp.float32)
+                self._half = jnp.asarray(qf[f"half_{axis}"].ravel(), dtype=jnp.float32)
+                ones = jnp.ones(4, dtype=jnp.float32)
+                disturbance_space = sets.Box(jnp.concatenate([dist_lb, -ones]),
+                                             jnp.concatenate([dist_ub, ones]))
+            else:
+                disturbance_space = sets.Box(dist_lb, dist_ub)
         super().__init__(control_mode, disturbance_mode, control_space, disturbance_space)
 
     def control_bound(self, cfg):
@@ -155,6 +174,17 @@ class U4Linear(dynamics.ControlAndDisturbanceAffineDynamics):
         return self.B
 
     def disturbance_jacobian(self, state, time):
-        # The disturbance enters each state equation directly (dx/dt += d),
-        # matching `dynamics.m` in helperOC.
-        return jnp.eye(self.A.shape[0])
+        # Base additive disturbance enters each state directly (dx/dt += d_box),
+        # matching `dynamics.m` / optDstb in helperOC.
+        g_box = jnp.eye(self.A.shape[0])
+        if self._beta is None:
+            return g_box
+        # Model-mismatch envelope stacked alongside the base disturbance so both
+        # act simultaneously: G_d = [I | diag(e_max(state))], d = [d_box; d_mismatch].
+        z = state / self._half
+        phi = jnp.array([1., z[0], z[1], z[2], z[3],
+                         z[0]**2, z[1]**2, z[2]**2, z[3]**2,
+                         z[0]*z[1], z[0]*z[2], z[0]*z[3],
+                         z[1]*z[2], z[1]*z[3], z[2]*z[3]])
+        e_max = jnp.maximum(phi @ self._beta, 0.)
+        return jnp.concatenate([g_box, jnp.diag(e_max)], axis=1)
