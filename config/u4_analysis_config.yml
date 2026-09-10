@@ -5,7 +5,7 @@ mat_path: hj_reachability/systems/U4_TrimLinear_mcode.mat
 quadfit_mat: hj_reachability/systems/u4_disturbance_quadfit.mat
 
 hj_analysis_config:
-  axis: lat             # lon or lat
+  axis: lon             # lon or lat
   mode: brt             # brs / frs / brt / frt
   accuracy: high        # low / medium / high / very_high
   time: 0.5             # horizon (s); integration direction follows the mode / lon: 0.5s
@@ -30,13 +30,13 @@ longitudinal:
   # Target set settings
   target_min_u: -1.0
   target_min_w: -1.0
-  target_min_q: -0.0525
-  target_min_theta: -0.0525
+  target_min_q: -0.0873
+  target_min_theta: -0.0873
 
   target_max_u: 1.0
   target_max_w: 1.0
-  target_max_q: 0.0525
-  target_max_theta: 0.0525
+  target_max_q: 0.0873
+  target_max_theta: 0.0873
 
   # Grid settings
   grid_min_u: -5.0         # (m/s)
@@ -68,11 +68,11 @@ longitudinal:
   # dx/dt (see U4Linear.disturbance_jacobian). All 0 means no disturbance.
   dist:
     u:
-      min: -0.5    # (m/s^2)
-      max: 0.5
+      min: -0.7    # (m/s^2)
+      max: 0.7
     w:
-      min: -0.5    # (m/s^2)
-      max: 0.5
+      min: -0.7    # (m/s^2)
+      max: 0.7
     q:
       min: -0.5236    # (rad/s^2)
       max: 0.5236
@@ -110,8 +110,6 @@ lateral:
   grid_number_phi: 61
 
   # Input perturbation limits about trim (+-Delta), per actuator type.
-  # thr (differential EDF thrust) now contributes lateral control authority,
-  # which the reduced 3-input model previously ignored.
   input_min_thr: -10.0       # (%)
   input_min_ail: -0.1745     # (rad)
   input_min_rv: -0.1745      # (rad)

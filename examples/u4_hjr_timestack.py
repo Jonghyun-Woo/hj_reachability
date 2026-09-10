@@ -34,7 +34,7 @@ import hj_reachability as hj
 from hj_reachability.systems.u4_linear import AXIS_SPEC
 
 # Number of time intervals; total slices = N_STEPS + 1.
-N_STEPS = 30
+N_STEPS = 50
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 OUTPUT_DIR = Path(__file__).resolve().parent / "u4_timestack"
