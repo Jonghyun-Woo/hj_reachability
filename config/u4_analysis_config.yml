@@ -84,30 +84,30 @@ lateral:
   # States: [v (m/s), p (rad/s), r (rad/s), phi (rad)], deviation from trim
   # Target set settings
   target_min_v: -1.0      # (m/s)
-  target_min_p: -0.0525   # (rad/s)
-  target_min_r: -0.0525   # (rad/s)
-  target_min_phi: -0.0525 # (rad)
+  target_min_p: -0.0873   # (rad/s)
+  target_min_r: -0.0873   # (rad/s)
+  target_min_phi: -0.0873 # (rad)
 
   target_max_v: 1.0       # (m/s)
-  target_max_p: 0.0525    # (rad/s)
-  target_max_r: 0.0525    # (rad/s)
-  target_max_phi: 0.0525  # (rad)
+  target_max_p: 0.0873    # (rad/s)
+  target_max_r: 0.0873    # (rad/s)
+  target_max_phi: 0.0873  # (rad)
 
   # Grid settings
-  grid_min_v: -5.0        # (m/s)
-  grid_min_p: -1.0472     # (rad/s)
+  grid_min_v: -10.0        # (m/s)
+  grid_min_p: -4.7123     # (rad/s)
   grid_min_r: -1.0472     # (rad/s)
   grid_min_phi: -0.5236   # (rad)
 
-  grid_max_v: 5.0         # (m/s)
-  grid_max_p: 1.0472      # (rad/s)
+  grid_max_v: 10.0         # (m/s)
+  grid_max_p: 4.7123      # (rad/s)
   grid_max_r: 1.0472      # (rad/s)
   grid_max_phi: 0.5236    # (rad)
 
   grid_number_v: 41
   grid_number_p: 61
   grid_number_r: 61
-  grid_number_phi: 61
+  grid_number_phi: 31
 
   # Input perturbation limits about trim (+-Delta), per actuator type.
   input_min_thr: -10.0       # (%)
