@@ -51,7 +51,7 @@ longitudinal:
 
   grid_number_u: 41
   grid_number_w: 81
-  grid_number_q: 61
+  grid_number_q: 161
   grid_number_theta: 31
 
   input_min_thr: -10.0    # (%)
