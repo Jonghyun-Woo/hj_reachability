@@ -5,7 +5,7 @@ mat_path: hj_reachability/systems/U4_TrimLinear_mcode.mat
 quadfit_mat: hj_reachability/systems/u4_disturbance_quadfit.mat
 
 hj_analysis_config:
-  axis: lat             # lon or lat
+  axis: lon             # lon or lat
   mode: brt             # brs / frs / brt / frt
   accuracy: high        # low / medium / high / very_high
   time: 0.5             # horizon (s); integration direction follows the mode / lon: 0.5s
@@ -30,13 +30,13 @@ longitudinal:
   # Target set settings
   target_min_u: -1.0
   target_min_w: -1.0
-  target_min_q: -0.0525
-  target_min_theta: -0.0525
+  target_min_q: -0.0873
+  target_min_theta: -0.0873
 
   target_max_u: 1.0
   target_max_w: 1.0
-  target_max_q: 0.0525
-  target_max_theta: 0.0525
+  target_max_q: 0.0873
+  target_max_theta: 0.0873
 
   # Grid settings
   grid_min_u: -5.0         # (m/s)
@@ -51,7 +51,7 @@ longitudinal:
 
   grid_number_u: 41
   grid_number_w: 81
-  grid_number_q: 61
+  grid_number_q: 161
   grid_number_theta: 31
 
   input_min_thr: -10.0    # (%)
@@ -68,11 +68,11 @@ longitudinal:
   # dx/dt (see U4Linear.disturbance_jacobian). All 0 means no disturbance.
   dist:
     u:
-      min: -0.5    # (m/s^2)
-      max: 0.5
+      min: -0.7    # (m/s^2)
+      max: 0.7
     w:
-      min: -0.5    # (m/s^2)
-      max: 0.5
+      min: -0.7    # (m/s^2)
+      max: 0.7
     q:
       min: -0.5236    # (rad/s^2)
       max: 0.5236
@@ -84,34 +84,32 @@ lateral:
   # States: [v (m/s), p (rad/s), r (rad/s), phi (rad)], deviation from trim
   # Target set settings
   target_min_v: -1.0      # (m/s)
-  target_min_p: -0.0525   # (rad/s)
-  target_min_r: -0.0525   # (rad/s)
-  target_min_phi: -0.0525 # (rad)
+  target_min_p: -0.0873   # (rad/s)
+  target_min_r: -0.0873   # (rad/s)
+  target_min_phi: -0.0873 # (rad)
 
   target_max_v: 1.0       # (m/s)
-  target_max_p: 0.0525    # (rad/s)
-  target_max_r: 0.0525    # (rad/s)
-  target_max_phi: 0.0525  # (rad)
+  target_max_p: 0.0873    # (rad/s)
+  target_max_r: 0.0873    # (rad/s)
+  target_max_phi: 0.0873  # (rad)
 
   # Grid settings
-  grid_min_v: -5.0        # (m/s)
-  grid_min_p: -1.0472     # (rad/s)
+  grid_min_v: -10.0        # (m/s)
+  grid_min_p: -4.7123     # (rad/s)
   grid_min_r: -1.0472     # (rad/s)
   grid_min_phi: -0.5236   # (rad)
 
-  grid_max_v: 5.0         # (m/s)
-  grid_max_p: 1.0472      # (rad/s)
+  grid_max_v: 10.0         # (m/s)
+  grid_max_p: 4.7123      # (rad/s)
   grid_max_r: 1.0472      # (rad/s)
   grid_max_phi: 0.5236    # (rad)
 
   grid_number_v: 41
   grid_number_p: 61
   grid_number_r: 61
-  grid_number_phi: 61
+  grid_number_phi: 31
 
   # Input perturbation limits about trim (+-Delta), per actuator type.
-  # thr (differential EDF thrust) now contributes lateral control authority,
-  # which the reduced 3-input model previously ignored.
   input_min_thr: -10.0       # (%)
   input_min_ail: -0.1745     # (rad)
   input_min_rv: -0.1745      # (rad)
