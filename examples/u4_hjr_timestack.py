@@ -6,9 +6,11 @@ before the next step). Output layout under examples/u4_timestack/:
 
   u4_analysis_config.yml            -- copy for MATLAB brt_setup(read_yml(...))
   {AXIS}_NPY/
-    {stem}_stack.npy  float32 (K, n1, n2, n3, n4)
-                      index 0 = tau=0 (most evolved BRT)
-                      index K-1 = tau=T (initial set)
+    {stem}_stack.mat  Vslices : 1xK cell of float32 (n1, n2, n3, n4) value grids
+                      taus    : 1xK time-to-go (s), aligned with Vslices
+                      (+ grid_min/max/N, grid_axes, state_names, mode, axis, tilt_deg)
+                      Vslices{1}   = tau=0 (most evolved BRT)
+                      Vslices{K}   = tau=T (initial set)
     {stem}.png        6-subplot all-pairs visualization of the tau=0 slice
 
 The reversed time ordering matches MATLAB value_grad_tv, which expects
@@ -28,10 +30,20 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 from pathlib import Path
+import scipy.io
 import yaml
 
 import hj_reachability as hj
 from hj_reachability.systems.u4_linear import AXIS_SPEC
+
+
+def to_cell(items):
+    """Pack a Python sequence into a 1xN object array so it becomes a MATLAB cell."""
+    cell = np.empty((len(items),), dtype=object)
+    for i, item in enumerate(items):
+        cell[i] = item
+    return cell
+
 
 # Number of time intervals; total slices = N_STEPS + 1.
 N_STEPS = 50
@@ -82,8 +94,8 @@ solver_settings = hj.SolverSettings.with_accuracy(hj_cfg["accuracy"], **solver_k
 
 times = np.linspace(0., time_sign * hj_cfg["time"], N_STEPS + 1)
 
-npy_dir = OUTPUT_DIR / f"{axis.upper()}_NPY"
-npy_dir.mkdir(parents=True, exist_ok=True)
+mat_dir = OUTPUT_DIR / f"{axis.upper()}_MAT"
+mat_dir.mkdir(parents=True, exist_ok=True)
 shutil.copy(config_path, OUTPUT_DIR / "u4_analysis_config.yml")
 
 for trim_idx in range(hj_cfg["trim_idx_start"], hj_cfg["trim_idx_end"] + 1):
@@ -101,10 +113,23 @@ for trim_idx in range(hj_cfg["trim_idx_start"], hj_cfg["trim_idx_end"] + 1):
     print()
 
     # Reverse so index 0 = tau=0 (most evolved) to match MATLAB Vslices{1}=tau=0.
-    stack = np.stack(slices[::-1])  # (K, n1, n2, n3, n4)
+    vslices = slices[::-1]  # K x (n1, n2, n3, n4)
+    taus = (abs(hj_cfg["time"]) - np.abs(times))[::-1]  # time-to-go (s); taus[0]=0 aligns with Vslices{1}
 
     stem = f"U4_{axis.upper()}_{mode.upper()}_TILT{tilt_deg}"
-    np.save(npy_dir / f"{stem}_stack.npy", stack)
+    scipy.io.savemat(
+        mat_dir / f"{stem}_stack.mat", {
+            "Vslices": to_cell(vslices),
+            "taus": np.asarray(taus, dtype=np.float64),
+            "grid_min": np.asarray(grid_lo, dtype=np.float64),
+            "grid_max": np.asarray(grid_hi, dtype=np.float64),
+            "grid_N": np.asarray(grid_shape, dtype=np.float64),
+            "grid_axes": to_cell([np.asarray(cv, dtype=np.float64) for cv in grid.coordinate_vectors]),
+            "state_names": to_cell(list(state_names)),
+            "mode": mode,
+            "axis": axis,
+            "tilt_deg": float(tilt_deg),
+        })
 
     final_values = slices[-1]   # tau=0, most evolved
     pairs = list(itertools.combinations(range(len(state_names)), 2))
@@ -124,8 +149,9 @@ for trim_idx in range(hj_cfg["trim_idx_start"], hj_cfg["trim_idx_end"] + 1):
         ax.set_title(f"{state_names[x_dim]} - {state_names[y_dim]}")
     fig.suptitle(stem, fontsize=14)
     fig.tight_layout()
-    fig.savefig(npy_dir / f"{stem}.png", dpi=150)
+    fig.savefig(mat_dir / f"{stem}.png", dpi=150)
     plt.close(fig)
 
-    print(f"U4_{axis.upper()} TILT{tilt_deg}: stack {stack.shape} saved to "
-          f"{npy_dir / (stem + '_stack.npy')}")
+    print(f"U4_{axis.upper()} TILT{tilt_deg}: {len(vslices)} slices "
+          f"{vslices[0].shape} saved to {mat_dir / (stem + '_stack.mat')}")
+    
