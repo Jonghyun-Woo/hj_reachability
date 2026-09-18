@@ -35,7 +35,7 @@ TARGET_COLOR = "green"   # rectangular target set
 TRIM_ROWS = {"lon": (0, 2, 4, 10), "lat": (1, 3, 5, 9)}
 
 UH_RANGE = range(1, 21)
-WH_IDX = 3
+WH_IDX = 2
 
 # Each panel is its own figure. 'dims' are the two kept state dims; 'xyz' maps
 # (kept_x, kept_y, trim-airspeed height 'h') onto the plot axes. The u-w panel
